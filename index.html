@@ -80,8 +80,8 @@
             let montante = capital;
 
             for (let i = 1; i <= anos * 12; i++) {
-                montante += aporte;
                 montante *= (1 + (juros / 12));
+                montante += aporte;
                 if (i % 12 === 0) {
                     valores.push(montante);
                     labels.push(i / 12);
