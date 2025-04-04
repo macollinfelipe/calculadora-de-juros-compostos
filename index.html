@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Juros Compostos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input, select, button {
+            margin: 10px;
+            padding: 10px;
+            width: 90%;
+        }
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Calculadora de Juros Compostos</h2>
+    <div class="container">
+        <label>Capital Inicial:</label>
+        <input type="number" id="capital" placeholder="1000">
+        <label>Juros (% ao ano):</label>
+        <input type="number" id="juros" placeholder="5">
+        <label>Período (anos):</label>
+        <input type="number" id="periodo" placeholder="10">
+        <label>Aporte Mensal:</label>
+        <input type="number" id="aporte" placeholder="100">
+        <button onclick="calcularJuros()">Calcular</button>
+        <h3>Resultado Final: <span id="resultado"></span></h3>
+        <canvas id="grafico"></canvas>
+    </div>
+
+    <script>
+        function formatarValor(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function calcularJuros() {
+            let capital = parseFloat(document.getElementById('capital').value);
+            let juros = parseFloat(document.getElementById('juros').value) / 100;
+            let anos = parseInt(document.getElementById('periodo').value);
+            let aporte = parseFloat(document.getElementById('aporte').value) || 0;
+            let valores = [];
+            let labels = [];
+            let montante = capital;
+
+            for (let i = 1; i <= anos * 12; i++) {
+                montante += aporte;
+                montante *= (1 + (juros / 12));
+                if (i % 12 === 0) {
+                    valores.push(montante);
+                    labels.push(i / 12);
+                }
+            }
+            document.getElementById('resultado').innerText = formatarValor(montante);
+            desenharGrafico(labels, valores);
+        }
+
+        function desenharGrafico(labels, valores) {
+            let ctx = document.getElementById('grafico').getContext('2d');
+            if (window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Evolução do Capital',
+                        data: valores,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>
