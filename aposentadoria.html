@@ -11,6 +11,11 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: white;
         }
         .navbar {
             background: #333;
@@ -55,6 +60,9 @@
             padding: 20px;
             border-radius: 8px;
         }
+        .dark-mode .container {
+            background: #1e1e1e;
+        }
         input, select, button {
             margin: 10px;
             padding: 10px;
@@ -95,6 +103,7 @@
         </div>
         <a href="sobre.html">Sobre Mim</a>
         <a href="contato.html">Redes Sociais</a>
+        <button onclick="alternarModo()">🌓</button>
     </div>
 
     <h2>Calculadora de Aposentadoria</h2>
@@ -113,6 +122,7 @@
         <input type="number" id="inflacao" placeholder="4">
         <div class="error" id="mensagemErro"></div>
         <button onclick="calcularAposentadoria()">Calcular</button>
+        <button onclick="baixarImagem()">Baixar Gráfico</button>
         <h3>Valor Estimado na Aposentadoria: <span id="resultadoAposentadoria"></span></h3>
         <h4>Total Investido: <span id="totalInvestido"></span></h4>
         <div class="resumo" id="resumoGanho"></div>
@@ -128,6 +138,17 @@
 
         function formatarValor(valor) {
             return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function alternarModo() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        function baixarImagem() {
+            const link = document.createElement('a');
+            link.download = 'grafico_aposentadoria.png';
+            link.href = document.getElementById('graficoAposentadoria').toDataURL();
+            link.click();
         }
 
         function calcularAposentadoria() {
@@ -216,3 +237,4 @@
     </script>
 </body>
 </html>
+
