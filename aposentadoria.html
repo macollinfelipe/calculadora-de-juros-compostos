@@ -8,23 +8,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-           <nav style="background-color: #28a745; padding: 10px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
-    <a href="index.html" style="margin: 0 15px; color: white; font-weight: bold; text-decoration: none;">Início</a>
-    <a href="juros.html" style="margin: 0 15px; color: white; font-weight: bold; text-decoration: none;">Juros Compostos</a>
-    <a href="aposentadoria.html" style="margin: 0 15px; color: white; font-weight: bold; text-decoration: none;">Aposentadoria</a>
-<nav style="background-color: #28a745; padding: 15px; border-radius: 8px; margin-bottom: 30px; text-align: center;">
-    <a href="index.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Início</a>
-    <a href="juros.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Juros Compostos</a>
-    <a href="aposentadoria.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Aposentadoria</a>
-</nav>
- {
             background: #333;
             padding: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+        }
+        .navbar {
+            background-color: #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 0 20px;
         }
         .dropdown {
+            display: inline-block;
             position: relative;
         }
         .dropdown-content {
@@ -44,11 +45,6 @@
         }
         .dropdown:hover .dropdown-content {
             display: block;
-        }
-        .navbar a {
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
         }
         .navbar a:hover, .dropdown-content a:hover {
             background: #555;
@@ -106,7 +102,7 @@
         <button onclick="alternarModo()">🌓</button>
     </div>
 
-    <h2>Calculadora de Aposentadoria</h2>
+    <h2 style="text-align: center; color: white;">Calculadora de Aposentadoria</h2>
     <div class="container">
         <label>Idade Atual:</label>
         <input type="number" id="idadeAtual" placeholder="30">
