@@ -140,6 +140,8 @@
     <button onclick="calcularAposentadoria()">Calcular</button>
 
     <div class="resultado" id="resultado"></div>
+    <div class="resultado" id="resultadoAporteCorrigido"></div>
+    <div class="resultado" id="resultadoRendaPassiva"></div>
 
     <canvas id="grafico"></canvas>
 
@@ -207,30 +209,38 @@
       const taxaReal = ((1 + taxaMensalBruta) / (1 + taxaMensalInflacao)) - 1;
 
       let montante = valorAtual * Math.pow(1 + taxaReal, meses);
+      let totalAportes = valorAtual;
 
       for (let i = 1; i <= meses; i++) {
         montante += aporteMensal * Math.pow(1 + taxaReal, meses - i);
+        totalAportes += aporteMensal;
       }
+
+      const aporteCorrigido = totalAportes * Math.pow(1 + inflacao, anos);
+      const rendaPassivaMensal = montante * 0.01;
+
+      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos corrigido pela inflação: ${formatarValor(montante)}`;
+      document.getElementById("resultadoAporteCorrigido").innerText = `Total aportado corrigido pela inflação: ${formatarValor(aporteCorrigido)}`;
+      document.getElementById("resultadoRendaPassiva").innerText = `Potencial de renda passiva mensal (1%): ${formatarValor(rendaPassivaMensal)}`;
 
       const valores = [], aportes = [], juros = [], labels = [];
 
       for (let i = 0; i <= meses; i += 12) {
         let total = valorAtual * Math.pow(1 + taxaReal, i);
-        let totalAportes = valorAtual;
+        let aportesAcumulados = valorAtual;
 
         for (let j = 1; j <= i; j++) {
           total += aporteMensal * Math.pow(1 + taxaReal, i - j);
-          totalAportes += aporteMensal;
+          aportesAcumulados += aporteMensal;
         }
 
-        const ganhoJuros = total - totalAportes;
+        const ganhoJuros = total - aportesAcumulados;
         labels.push((idadeAtual + i / 12).toString());
         valores.push(Number(total.toFixed(2)));
-        aportes.push(Number(totalAportes.toFixed(2)));
+        aportes.push(Number(aportesAcumulados.toFixed(2)));
         juros.push(Number(ganhoJuros.toFixed(2)));
       }
 
-      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos corrigido pela inflação: ${formatarValor(montante)}`;
       desenharGrafico(labels, valores, aportes, juros);
     }
 
