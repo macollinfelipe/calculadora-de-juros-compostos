@@ -215,11 +215,19 @@
       let montante = valorAtual * Math.pow(1 + taxaReal, meses);
       let totalAportes = valorAtual;
       let aporteCorrigido = valorAtual * Math.pow(1 + inflacao, anos);
+      const dadosGrafico = [];
 
       for (let i = 1; i <= meses; i++) {
         montante += aporteMensal * Math.pow(1 + taxaReal, meses - i);
         totalAportes += aporteMensal;
         aporteCorrigido += aporteMensal * Math.pow(1 + taxaMensalInflacao, meses - i);
+
+        if (i % 12 === 0 || i === meses) {
+          dadosGrafico.push({
+            ano: idadeAtual + Math.floor(i / 12),
+            valor: montante
+          });
+        }
       }
 
       const rendaPassivaMensal = montante * porcentagemRenda;
@@ -227,6 +235,48 @@
       document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos corrigido pela inflação: ${formatarValor(montante)}`;
       document.getElementById("resultadoAporteCorrigido").innerText = `Total aportado corrigido pela inflação: ${formatarValor(aporteCorrigido)}`;
       document.getElementById("resultadoRendaPassiva").innerText = `Potencial de renda passiva mensal (${(porcentagemRenda * 100).toFixed(2)}%): ${formatarValor(rendaPassivaMensal)}`;
+
+      const ctx = document.getElementById("grafico").getContext("2d");
+      if (window.graficoAposentadoria) {
+        window.graficoAposentadoria.destroy();
+      }
+      window.graficoAposentadoria = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dadosGrafico.map(d => d.ano),
+          datasets: [{
+            label: "Evolução do Patrimônio",
+            data: dadosGrafico.map(d => d.valor),
+            borderColor: "#28a745",
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return formatarValor(context.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                callback: function(value) {
+                  return formatarValor(value);
+                }
+              }
+            }
+          }
+        }
+      });
     }
   </script>
 </body>
