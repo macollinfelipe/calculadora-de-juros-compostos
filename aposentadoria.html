@@ -1,236 +1,253 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Aposentadoria</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background: #333;
-            padding: 10px;
-        }
-        .navbar {
-            background-color: #28a745;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        .navbar a {
-            color: white;
-            font-weight: bold;
-            text-decoration: none;
-            margin: 0 20px;
-        }
-        .dropdown {
-            display: inline-block;
-            position: relative;
-        }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #444;
-            min-width: 160px;
-            z-index: 1;
-            top: 100%;
-            left: 0;
-        }
-        .dropdown-content a {
-            color: white;
-            padding: 10px;
-            text-decoration: none;
-            display: block;
-        }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        .navbar a:hover, .dropdown-content a:hover {
-            background: #555;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: #f4f4f4;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        .dark-mode .container {
-            background: #1e1e1e;
-        }
-        input, select, button {
-            margin: 10px;
-            padding: 10px;
-            width: 90%;
-        }
-        canvas {
-            max-width: 100%;
-            margin-top: 20px;
-        }
-        .error {
-            color: red;
-            font-size: 0.9em;
-        }
-        .resumo {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Aposentadoria</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+      color: #333;
+    }
+
+    nav {
+      background-color: #28a745;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    nav a {
+      color: white;
+      font-weight: bold;
+      text-decoration: none;
+      margin: 0 20px;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #d4f5d6;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #28a745;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      margin-top: 15px;
+      display: block;
+      font-weight: bold;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .resultado {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    canvas {
+      margin-top: 30px;
+      width: 100% !important;
+      height: auto !important;
+    }
+
+    a.voltar {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a.voltar:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-    <div class="navbar">
-        <div class="dropdown">
-            <a href="#">Calculadoras</a>
-            <div class="dropdown-content">
-                <a href="index.html">Juros Compostos</a>
-                <a href="aposentadoria.html">Aposentadoria</a>
-            </div>
-        </div>
-        <a href="sobre.html">Sobre Mim</a>
-        <a href="contato.html">Redes Sociais</a>
-        <button onclick="alternarModo()">🌓</button>
-    </div>
+  <nav>
+    <a href="index.html">Início</a>
+    <a href="juros.html">Juros Compostos</a>
+    <a href="aposentadoria.html">Aposentadoria</a>
+    <a href="sobre.html">Sobre Mim</a>
+  </nav>
 
-    <h2 style="text-align: center; color: white;">Calculadora de Aposentadoria</h2>
-    <div class="container">
-        <label>Idade Atual:</label>
-        <input type="number" id="idadeAtual" placeholder="30">
-        <label>Idade da Aposentadoria:</label>
-        <input type="number" id="idadeAposentadoria" placeholder="65">
-        <label>Valor Inicial:</label>
-        <input type="text" id="valorInicial" placeholder="10.000" oninput="formatarNumero(this)">
-        <label>Aporte Mensal:</label>
-        <input type="text" id="aporteMensal" placeholder="500" oninput="formatarNumero(this)">
-        <label>Rentabilidade Anual (%):</label>
-        <input type="number" id="rentabilidade" placeholder="10">
-        <label>Inflação Anual (%):</label>
-        <input type="number" id="inflacao" placeholder="4">
-        <div class="error" id="mensagemErro"></div>
-        <button onclick="calcularAposentadoria()">Calcular</button>
-        <button onclick="baixarImagem()">Baixar Gráfico</button>
-        <h3>Valor Estimado na Aposentadoria: <span id="resultadoAposentadoria"></span></h3>
-        <h4>Total Investido: <span id="totalInvestido"></span></h4>
-        <div class="resumo" id="resumoGanho"></div>
-        <canvas id="graficoAposentadoria"></canvas>
-    </div>
+  <div class="container">
+    <h2>Calculadora de Aposentadoria</h2>
 
-    <script>
-        function formatarNumero(campo) {
-            let valor = campo.value.replace(/\D/g, "");
-            valor = (parseFloat(valor) / 100).toLocaleString("pt-BR", {minimumFractionDigits: 2});
-            campo.value = valor;
+    <label for="idadeAtual">Idade Atual:</label>
+    <input type="number" id="idadeAtual" placeholder="Ex: 25" />
+
+    <label for="idadeAposentadoria">Idade para Aposentadoria:</label>
+    <input type="number" id="idadeAposentadoria" placeholder="Ex: 65" />
+
+    <label for="valorAtual">Valor Atual Investido (R$):</label>
+    <input type="number" id="valorAtual" placeholder="Ex: 1000" />
+
+    <label for="aporteMensal">Aporte Mensal (R$):</label>
+    <input type="number" id="aporteMensal" placeholder="Ex: 200" />
+
+    <label for="taxaJuros">Taxa de Juros (% ao ano):</label>
+    <input type="number" id="taxaJuros" placeholder="Ex: 10" step="0.01" />
+
+    <button onclick="calcularAposentadoria()">Calcular</button>
+
+    <div class="resultado" id="resultado"></div>
+
+    <canvas id="grafico"></canvas>
+
+    <a class="voltar" href="index.html">&#8592; Voltar à Página Principal</a>
+  </div>
+
+  <script>
+    function formatarValor(valor) {
+      return valor.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        minimumFractionDigits: 2,
+      });
+    }
+
+    function calcularAposentadoria() {
+      const idadeAtual = parseInt(document.getElementById("idadeAtual").value);
+      const idadeAposentadoria = parseInt(document.getElementById("idadeAposentadoria").value);
+      const valorAtual = parseFloat(document.getElementById("valorAtual").value);
+      const aporteMensal = parseFloat(document.getElementById("aporteMensal").value);
+      const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
+
+      if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || isNaN(valorAtual) || isNaN(aporteMensal) || isNaN(taxaJuros)) {
+        document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
+        return;
+      }
+
+      const anos = idadeAposentadoria - idadeAtual;
+      const meses = anos * 12;
+      const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+
+      let montante = valorAtual * Math.pow(1 + taxaMensal, meses);
+
+      for (let i = 1; i <= meses; i++) {
+        montante += aporteMensal * Math.pow(1 + taxaMensal, meses - i);
+      }
+
+      const valores = [];
+      const aportes = [];
+      const juros = [];
+      const labels = [];
+
+      for (let i = 0; i <= meses; i += 12) {
+        let total = valorAtual * Math.pow(1 + taxaMensal, i);
+        let totalAportes = valorAtual;
+
+        for (let j = 1; j <= i; j++) {
+          total += aporteMensal * Math.pow(1 + taxaMensal, i - j);
+          totalAportes += aporteMensal;
         }
 
-        function formatarValor(valor) {
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
+        const ganhoJuros = total - totalAportes;
+        labels.push((idadeAtual + i / 12).toString());
+        valores.push(parseFloat(total.toFixed(2)));
+        aportes.push(parseFloat(totalAportes.toFixed(2)));
+        juros.push(parseFloat(ganhoJuros.toFixed(2)));
+      }
 
-        function alternarModo() {
-            document.body.classList.toggle("dark-mode");
-        }
+      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos: ${formatarValor(montante)}`;
+      desenharGrafico(labels, valores, aportes, juros);
+    }
 
-        function baixarImagem() {
-            const link = document.createElement('a');
-            link.download = 'grafico_aposentadoria.png';
-            link.href = document.getElementById('graficoAposentadoria').toDataURL();
-            link.click();
-        }
-
-        function calcularAposentadoria() {
-            document.getElementById('mensagemErro').innerText = '';
-            document.getElementById('resumoGanho').innerText = '';
-
-            let idadeAtual = parseInt(document.getElementById('idadeAtual').value);
-            let idadeAposentadoria = parseInt(document.getElementById('idadeAposentadoria').value);
-            let valorInicial = parseFloat(document.getElementById('valorInicial').value.replace(/\./g, '').replace(',', '.')) || 0;
-            let aporte = parseFloat(document.getElementById('aporteMensal').value.replace(/\./g, '').replace(',', '.')) || 0;
-            let rentabilidade = parseFloat(document.getElementById('rentabilidade').value);
-            let inflacao = parseFloat(document.getElementById('inflacao').value);
-
-            if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || idadeAposentadoria <= idadeAtual || rentabilidade < 0 || inflacao < 0) {
-                document.getElementById('mensagemErro').innerText = 'Preencha os campos corretamente. A idade da aposentadoria deve ser maior que a atual, e rentabilidade e inflação não podem ser negativas.';
-                return;
+    function desenharGrafico(labels, valores, aportes, juros) {
+      const ctx = document.getElementById("grafico").getContext("2d");
+      if (window.myChart) {
+        window.myChart.destroy();
+      }
+      window.myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Montante Total",
+              data: valores,
+              borderColor: "green",
+              backgroundColor: "rgba(40, 167, 69, 0.1)",
+              fill: true,
+              tension: 0.3,
+            },
+            {
+              label: "Total Investido",
+              data: aportes,
+              borderColor: "#007bff",
+              backgroundColor: "rgba(0, 123, 255, 0.1)",
+              fill: true,
+              tension: 0.3,
+            },
+            {
+              label: "Juros Acumulados",
+              data: juros,
+              borderColor: "#ffc107",
+              backgroundColor: "rgba(255, 193, 7, 0.1)",
+              fill: true,
+              tension: 0.3,
             }
-
-            let anos = idadeAposentadoria - idadeAtual;
-            let meses = anos * 12;
-            let taxaMensalReal = Math.pow(1 + ((rentabilidade - inflacao) / 100), 1 / 12) - 1;
-
-            let montanteAtual = valorInicial;
-            let valores = [];
-            let aportesTotais = [];
-            let labels = [];
-            let totalAportes = valorInicial;
-
-            for (let i = 1; i <= meses; i++) {
-                montanteAtual *= (1 + taxaMensalReal);
-                montanteAtual += aporte;
-                totalAportes += aporte;
-
-                if (i % 12 === 0) {
-                    valores.push(montanteAtual);
-                    aportesTotais.push(totalAportes);
-                    labels.push(idadeAtual + (i / 12));
-                }
-            }
-
-            document.getElementById('resultadoAposentadoria').innerText = formatarValor(montanteAtual);
-            document.getElementById('totalInvestido').innerText = formatarValor(totalAportes);
-
-            const ganho = montanteAtual - totalAportes;
-            document.getElementById('resumoGanho').innerText = `Você ganhou ${formatarValor(ganho)} a mais do que investiu.`;
-
-            desenharGrafico(labels, valores, aportesTotais);
-        }
-
-        function desenharGrafico(labels, valores, aportesTotais) {
-            let ctx = document.getElementById('graficoAposentadoria').getContext('2d');
-            if (window.aposentadoriaChart) window.aposentadoriaChart.destroy();
-            window.aposentadoriaChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Evolução do Patrimônio',
-                            data: valores,
-                            borderColor: 'green',
-                            backgroundColor: 'rgba(0,128,0,0.1)',
-                            fill: true,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Total Investido',
-                            data: aportesTotais,
-                            borderColor: 'orange',
-                            backgroundColor: 'rgba(255,165,0,0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }
-                    ]
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              ticks: {
+                callback: function (value) {
+                  return formatarValor(value);
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        }
-    </script>
+              },
+            },
+          },
+        },
+      });
+    }
+  </script>
 </body>
 </html>
-
