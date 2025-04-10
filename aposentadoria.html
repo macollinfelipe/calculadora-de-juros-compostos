@@ -152,132 +152,151 @@
   </div>
 
   <script>
-    function aplicarMascaraMoeda(input) {
-      input.addEventListener("input", function () {
-        let valor = input.value.replace(/\D/g, "");
-        valor = (parseInt(valor) / 100).toFixed(2);
-        if (!isNaN(valor)) {
-          input.value = Number(valor).toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          });
-        }
-      });
+  function aplicarMascaraMoeda(input) {
+    input.addEventListener("input", function () {
+      let valor = input.value.replace(/\D/g, "");
+      valor = (parseInt(valor) / 100).toFixed(2);
+      if (!isNaN(valor)) {
+        input.value = Number(valor).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        });
+      }
+    });
 
-      input.addEventListener("blur", function () {
-        if (input.value === "") return;
-        const valor = parseFloat(input.value.replace(/[^\d,-]/g, "").replace(",", "."));
-        input.dataset.value = valor;
-      });
+    input.addEventListener("blur", function () {
+      if (input.value === "") return;
+      const valor = parseFloat(input.value.replace(/[^\d,-]/g, "").replace(",", "."));
+      input.dataset.value = valor;
+    });
 
-      input.addEventListener("focus", function () {
-        input.select();
-      });
+    input.addEventListener("focus", function () {
+      input.select();
+    });
+  }
+
+  window.onload = () => {
+    const camposMoeda = ["valorAtual", "aporteMensal"];
+    camposMoeda.forEach(id => {
+      const input = document.getElementById(id);
+      aplicarMascaraMoeda(input);
+    });
+  };
+
+  function formatarValor(valor) {
+    return valor.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    });
+  }
+
+  function calcularAposentadoria() {
+    const idadeAtual = parseInt(document.getElementById("idadeAtual").value);
+    const idadeAposentadoria = parseInt(document.getElementById("idadeAposentadoria").value);
+    const valorAtual = parseFloat(document.getElementById("valorAtual").value.replace(/[^\d,-]/g, "").replace(",", ".")) || 0;
+    const aporteMensal = parseFloat(document.getElementById("aporteMensal").value.replace(/[^\d,-]/g, "").replace(",", ".")) || 0;
+    const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
+    const inflacao = parseFloat(document.getElementById("inflacao").value) / 100;
+    const porcentagemRenda = parseFloat(document.getElementById("porcentagemRenda").value) / 100;
+
+    if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || isNaN(taxaJuros) || isNaN(inflacao) || isNaN(porcentagemRenda)) {
+      document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
+      return;
     }
 
-    window.onload = () => {
-      const camposMoeda = ["valorAtual", "aporteMensal"];
-      camposMoeda.forEach(id => {
-        const input = document.getElementById(id);
-        aplicarMascaraMoeda(input);
-      });
-    };
+    const anos = idadeAposentadoria - idadeAtual;
+    const meses = anos * 12;
 
-    function formatarValor(valor) {
-      return valor.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 2,
-      });
+    const taxaMensalBruta = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+    const taxaMensalInflacao = Math.pow(1 + inflacao, 1 / 12) - 1;
+    const taxaReal = ((1 + taxaMensalBruta) / (1 + taxaMensalInflacao)) - 1;
+
+    let montanteReal = valorAtual * Math.pow(1 + taxaReal, meses);
+    let montanteNominal = valorAtual * Math.pow(1 + taxaMensalBruta, meses);
+
+    let aporteCorrigido = valorAtual * Math.pow(1 + inflacao, anos);
+    let totalAportes = valorAtual;
+
+    const dadosNominal = [];
+    const dadosReal = [];
+
+    for (let i = 1; i <= meses; i++) {
+      montanteReal += aporteMensal * Math.pow(1 + taxaReal, meses - i);
+      montanteNominal += aporteMensal * Math.pow(1 + taxaMensalBruta, meses - i);
+      totalAportes += aporteMensal;
+      aporteCorrigido += aporteMensal * Math.pow(1 + taxaMensalInflacao, meses - i);
+
+      if (i % 12 === 0 || i === meses) {
+        dadosNominal.push({
+          ano: idadeAtual + Math.floor(i / 12),
+          valor: montanteNominal
+        });
+
+        dadosReal.push({
+          ano: idadeAtual + Math.floor(i / 12),
+          valor: montanteReal
+        });
+      }
     }
 
-    function calcularAposentadoria() {
-      const idadeAtual = parseInt(document.getElementById("idadeAtual").value);
-      const idadeAposentadoria = parseInt(document.getElementById("idadeAposentadoria").value);
+    const rendaPassivaMensal = montanteReal * porcentagemRenda;
 
-      const valorAtual = parseFloat(document.getElementById("valorAtual").value.replace(/[^\d,-]/g, "").replace(",", ".")) || 0;
-      const aporteMensal = parseFloat(document.getElementById("aporteMensal").value.replace(/[^\d,-]/g, "").replace(",", ".")) || 0;
-      const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
-      const inflacao = parseFloat(document.getElementById("inflacao").value) / 100;
-      const porcentagemRenda = parseFloat(document.getElementById("porcentagemRenda").value) / 100;
+    document.getElementById("resultado").innerText = `Montante Real aos ${idadeAposentadoria} anos (corrigido pela inflação): ${formatarValor(montanteReal)}`;
+    document.getElementById("resultadoAporteCorrigido").innerText = `Total aportado corrigido pela inflação: ${formatarValor(aporteCorrigido)}`;
+    document.getElementById("resultadoRendaPassiva").innerText = `Potencial de renda passiva mensal (${(porcentagemRenda * 100).toFixed(2)}%): ${formatarValor(rendaPassivaMensal)}`;
 
-      if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || isNaN(taxaJuros) || isNaN(inflacao) || isNaN(porcentagemRenda)) {
-        document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
-        return;
-      }
+    const ctx = document.getElementById("grafico").getContext("2d");
+    if (window.graficoAposentadoria) window.graficoAposentadoria.destroy();
 
-      const anos = idadeAposentadoria - idadeAtual;
-      const meses = anos * 12;
-      const taxaMensalBruta = Math.pow(1 + taxaJuros, 1 / 12) - 1;
-      const taxaMensalInflacao = Math.pow(1 + inflacao, 1 / 12) - 1;
-      const taxaReal = ((1 + taxaMensalBruta) / (1 + taxaMensalInflacao)) - 1;
-
-      let montante = valorAtual * Math.pow(1 + taxaReal, meses);
-      let totalAportes = valorAtual;
-      let aporteCorrigido = valorAtual * Math.pow(1 + inflacao, anos);
-      const dadosGrafico = [];
-
-      for (let i = 1; i <= meses; i++) {
-        montante += aporteMensal * Math.pow(1 + taxaReal, meses - i);
-        totalAportes += aporteMensal;
-        aporteCorrigido += aporteMensal * Math.pow(1 + taxaMensalInflacao, meses - i);
-
-        if (i % 12 === 0 || i === meses) {
-          dadosGrafico.push({
-            ano: idadeAtual + Math.floor(i / 12),
-            valor: montante
-          });
-        }
-      }
-
-      const rendaPassivaMensal = montante * porcentagemRenda;
-
-      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos corrigido pela inflação: ${formatarValor(montante)}`;
-      document.getElementById("resultadoAporteCorrigido").innerText = `Total aportado corrigido pela inflação: ${formatarValor(aporteCorrigido)}`;
-      document.getElementById("resultadoRendaPassiva").innerText = `Potencial de renda passiva mensal (${(porcentagemRenda * 100).toFixed(2)}%): ${formatarValor(rendaPassivaMensal)}`;
-
-      const ctx = document.getElementById("grafico").getContext("2d");
-      if (window.graficoAposentadoria) {
-        window.graficoAposentadoria.destroy();
-      }
-      window.graficoAposentadoria = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: dadosGrafico.map(d => d.ano),
-          datasets: [{
-            label: "Evolução do Patrimônio",
-            data: dadosGrafico.map(d => d.valor),
+    window.graficoAposentadoria = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: dadosNominal.map(d => d.ano),
+        datasets: [
+          {
+            label: "Montante Nominal (sem descontar inflação)",
+            data: dadosNominal.map(d => d.valor),
+            borderColor: "#007bff",
+            backgroundColor: "rgba(0,123,255,0.1)",
+            fill: true
+          },
+          {
+            label: "Montante Real (ajustado pela inflação)",
+            data: dadosReal.map(d => d.valor),
             borderColor: "#28a745",
-            fill: false
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              display: true
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return formatarValor(context.parsed.y);
-                }
+            backgroundColor: "rgba(40,167,69,0.1)",
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return formatarValor(context.parsed.y);
               }
             }
-          },
-          scales: {
-            y: {
-              beginAtZero: false,
-              ticks: {
-                callback: function(value) {
-                  return formatarValor(value);
-                }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              callback: function (value) {
+                return formatarValor(value);
               }
             }
           }
         }
-      });
-    }
-  </script>
+      }
+    });
+  }
+</script>
 </body>
 </html>
