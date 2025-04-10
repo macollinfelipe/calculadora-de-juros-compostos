@@ -64,6 +64,24 @@
             max-width: 100%;
             margin-top: 20px;
         }
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+        .resumo {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -91,9 +109,13 @@
         <input type="text" id="aporteMensal" placeholder="500" oninput="formatarNumero(this)">
         <label>Rentabilidade Anual (%):</label>
         <input type="number" id="rentabilidade" placeholder="10">
+        <label>Inflação Anual (%):</label>
+        <input type="number" id="inflacao" placeholder="4">
+        <div class="error" id="mensagemErro"></div>
         <button onclick="calcularAposentadoria()">Calcular</button>
         <h3>Valor Estimado na Aposentadoria: <span id="resultadoAposentadoria"></span></h3>
         <h4>Total Investido: <span id="totalInvestido"></span></h4>
+        <div class="resumo" id="resumoGanho"></div>
         <canvas id="graficoAposentadoria"></canvas>
     </div>
 
@@ -109,14 +131,24 @@
         }
 
         function calcularAposentadoria() {
+            document.getElementById('mensagemErro').innerText = '';
+            document.getElementById('resumoGanho').innerText = '';
+
             let idadeAtual = parseInt(document.getElementById('idadeAtual').value);
             let idadeAposentadoria = parseInt(document.getElementById('idadeAposentadoria').value);
-            let anos = idadeAposentadoria - idadeAtual;
-            let meses = anos * 12;
             let valorInicial = parseFloat(document.getElementById('valorInicial').value.replace(/\./g, '').replace(',', '.')) || 0;
             let aporte = parseFloat(document.getElementById('aporteMensal').value.replace(/\./g, '').replace(',', '.')) || 0;
-            let rentabilidade = parseFloat(document.getElementById('rentabilidade').value) / 100;
-            let taxaMensal = Math.pow(1 + rentabilidade, 1 / 12) - 1;
+            let rentabilidade = parseFloat(document.getElementById('rentabilidade').value);
+            let inflacao = parseFloat(document.getElementById('inflacao').value);
+
+            if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || idadeAposentadoria <= idadeAtual || rentabilidade < 0 || inflacao < 0) {
+                document.getElementById('mensagemErro').innerText = 'Preencha os campos corretamente. A idade da aposentadoria deve ser maior que a atual, e rentabilidade e inflação não podem ser negativas.';
+                return;
+            }
+
+            let anos = idadeAposentadoria - idadeAtual;
+            let meses = anos * 12;
+            let taxaMensalReal = Math.pow(1 + ((rentabilidade - inflacao) / 100), 1 / 12) - 1;
 
             let montanteAtual = valorInicial;
             let valores = [];
@@ -125,7 +157,7 @@
             let totalAportes = valorInicial;
 
             for (let i = 1; i <= meses; i++) {
-                montanteAtual *= (1 + taxaMensal);
+                montanteAtual *= (1 + taxaMensalReal);
                 montanteAtual += aporte;
                 totalAportes += aporte;
 
@@ -138,6 +170,10 @@
 
             document.getElementById('resultadoAposentadoria').innerText = formatarValor(montanteAtual);
             document.getElementById('totalInvestido').innerText = formatarValor(totalAportes);
+
+            const ganho = montanteAtual - totalAportes;
+            document.getElementById('resumoGanho').innerText = `Você ganhou ${formatarValor(ganho)} a mais do que investiu.`;
+
             desenharGrafico(labels, valores, aportesTotais);
         }
 
@@ -153,15 +189,27 @@
                             label: 'Evolução do Patrimônio',
                             data: valores,
                             borderColor: 'green',
-                            fill: false
+                            backgroundColor: 'rgba(0,128,0,0.1)',
+                            fill: true,
+                            tension: 0.3
                         },
                         {
                             label: 'Total Investido',
                             data: aportesTotais,
                             borderColor: 'orange',
-                            fill: false
+                            backgroundColor: 'rgba(255,165,0,0.1)',
+                            fill: true,
+                            tension: 0.3
                         }
                     ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
                 }
             });
         }
