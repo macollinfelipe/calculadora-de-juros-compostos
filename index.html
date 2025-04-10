@@ -8,11 +8,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            <nav style="background-color: #28a745; padding: 15px; border-radius: 8px; margin-bottom: 30px; text-align: center;">
-    <a href="index.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Início</a>
-    <a href="juros.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Juros Compostos</a>
-    <a href="aposentadoria.html" style="color: white; font-weight: bold; text-decoration: none; margin: 0 20px;">Aposentadoria</a>
-</nav>
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f8f9fa;
+        }
+        nav {
+            background-color: #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 0 20px;
         }
         input, button {
             display: block;
@@ -54,6 +65,12 @@
     </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html">Início</a>
+        <a href="juros.html">Juros Compostos</a>
+        <a href="aposentadoria.html">Aposentadoria</a>
+    </nav>
+
     <h2>Calculadora de Juros Compostos</h2>
 
     <label for="valorInicial">Valor Inicial (R$):</label>
@@ -144,4 +161,3 @@
     </script>
 </body>
 </html>
-
