@@ -144,119 +144,120 @@
     <a class="voltar" href="index.html">&#8592; Voltar à Página Principal</a>
   </div>
 
-  <script>
-    function formatarValor(valor) {
-      return valor.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 2,
-      });
+<script>
+  function formatarValor(valor) {
+    return valor.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  function calcularJurosCompostos() {
+    const valorInicial = parseFloat(document.getElementById("valorInicial").value);
+    const aporteMensal = parseFloat(document.getElementById("aporteMensal").value);
+    const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
+    const periodo = parseInt(document.getElementById("periodo").value);
+
+    if (isNaN(valorInicial) || isNaN(aporteMensal) || isNaN(taxaJuros) || isNaN(periodo)) {
+      document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
+      return;
     }
 
-    function calcularJurosCompostos() {
-      const valorInicial = parseFloat(document.getElementById("valorInicial").value);
-      const aporteMensal = parseFloat(document.getElementById("aporteMensal").value);
-      const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
-      const periodo = parseInt(document.getElementById("periodo").value);
+    const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+    const meses = periodo * 12;
+    let montante = valorInicial * Math.pow(1 + taxaMensal, meses);
 
-      if (isNaN(valorInicial) || isNaN(aporteMensal) || isNaN(taxaJuros) || isNaN(periodo)) {
-        document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
-        return;
-      }
-
-      const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
-      const meses = periodo * 12;
-      let montante = valorInicial * Math.pow(1 + taxaMensal, meses);
-
-      for (let i = 1; i <= meses; i++) {
-        montante += aporteMensal * Math.pow(1 + taxaMensal, meses - i);
-      }
-
-      const valores = [];
-      const aportes = [];
-      const juros = [];
-      const labels = [];
-
-      for (let i = 0; i <= meses; i += 12) {
-        let total = valorInicial * Math.pow(1 + taxaMensal, i);
-        let totalAportes = valorInicial;
-
-        for (let j = 1; j <= i; j++) {
-          total += aporteMensal * Math.pow(1 + taxaMensal, i - j);
-          totalAportes += aporteMensal;
-        }
-
-        const ganhoJuros = total - totalAportes;
-        labels.push((i / 12).toString() + " ano" + (i / 12 > 1 ? "s" : ""));
-        valores.push(parseFloat(total.toFixed(2)));
-        aportes.push(parseFloat(totalAportes.toFixed(2)));
-        juros.push(parseFloat(ganhoJuros.toFixed(2)));
-      }
-
-      document.getElementById("resultado").innerText = `Montante final: ${formatarValor(montante)}`;
-      desenharGrafico(labels, valores, aportes, juros);
+    for (let i = 1; i <= meses; i++) {
+      montante += aporteMensal * Math.pow(1 + taxaMensal, meses - i);
     }
 
-    function desenharGrafico(labels, valores, aportes, juros) {
-      const ctx = document.getElementById("grafico").getContext("2d");
-      if (window.myChart) {
-        window.myChart.destroy();
+    const valores = [];
+    const aportes = [];
+    const juros = [];
+    const labels = [];
+
+    for (let i = 0; i <= meses; i += 12) {
+      let total = valorInicial * Math.pow(1 + taxaMensal, i);
+      let totalAportes = valorInicial;
+
+      for (let j = 1; j <= i; j++) {
+        total += aporteMensal * Math.pow(1 + taxaMensal, i - j);
+        totalAportes += aporteMensal;
       }
-      window.myChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: "Montante Total",
-              data: valores,
-              borderColor: "green",
-              backgroundColor: "rgba(40, 167, 69, 0.1)",
-              fill: true,
-              tension: 0.3,
-            },
-            {
-              label: "Total Investido",
-              data: aportes,
-              borderColor: "#007bff",
-              backgroundColor: "rgba(0, 123, 255, 0.1)",
-              fill: true,
-              tension: 0.3,
-            },
-            {
-              label: "Juros Acumulados",
-              data: juros,
-              borderColor: "#ffc107",
-              backgroundColor: "rgba(255, 193, 7, 0.1)",
-              fill: true,
-              tension: 0.3,
-            }
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  return formatarValor(context.parsed.y);
-                },
-              },
-            },
+
+      const ganhoJuros = total - totalAportes;
+      labels.push((i / 12).toString() + " ano" + (i / 12 > 1 ? "s" : ""));
+      valores.push(Number(total.toFixed(2)));
+      aportes.push(Number(totalAportes.toFixed(2)));
+      juros.push(Number(ganhoJuros.toFixed(2)));
+    }
+
+    document.getElementById("resultado").innerText = `Montante final: ${formatarValor(Number(montante.toFixed(2)))}`;
+    desenharGrafico(labels, valores, aportes, juros);
+  }
+
+  function desenharGrafico(labels, valores, aportes, juros) {
+    const ctx = document.getElementById("grafico").getContext("2d");
+    if (window.myChart) {
+      window.myChart.destroy();
+    }
+    window.myChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Montante Total",
+            data: valores,
+            borderColor: "green",
+            backgroundColor: "rgba(40, 167, 69, 0.1)",
+            fill: true,
+            tension: 0.3,
           },
-          scales: {
-            y: {
-              ticks: {
-                callback: function (value) {
-                  return formatarValor(value);
-                },
+          {
+            label: "Total Investido",
+            data: aportes,
+            borderColor: "#007bff",
+            backgroundColor: "rgba(0, 123, 255, 0.1)",
+            fill: true,
+            tension: 0.3,
+          },
+          {
+            label: "Juros Acumulados",
+            data: juros,
+            borderColor: "#ffc107",
+            backgroundColor: "rgba(255, 193, 7, 0.1)",
+            fill: true,
+            tension: 0.3,
+          }
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return `${context.dataset.label}: ${formatarValor(context.parsed.y)}`;
               },
             },
           },
         },
-      });
-    }
-  </script>
+        scales: {
+          y: {
+            ticks: {
+              callback: function (value) {
+                return formatarValor(value);
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+</script>
 </body>
 </html>
 
