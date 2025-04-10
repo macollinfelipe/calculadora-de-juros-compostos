@@ -111,7 +111,7 @@
 <body>
   <nav>
     <a href="index.html">Início</a>
-    <a href="index.html">Juros Compostos</a>
+    <a href="juros.html">Juros Compostos</a>
     <a href="aposentadoria.html">Aposentadoria</a>
     <a href="sobre.html">Sobre Mim</a>
   </nav>
@@ -133,6 +133,9 @@
 
     <label for="taxaJuros">Taxa de Juros (% ao ano):</label>
     <input type="number" id="taxaJuros" placeholder="Ex: 10" step="0.01" />
+
+    <label for="inflacao">Inflação (% ao ano):</label>
+    <input type="number" id="inflacao" placeholder="Ex: 4.5" step="0.01" />
 
     <button onclick="calcularAposentadoria()">Calcular</button>
 
@@ -158,93 +161,100 @@
       const valorAtual = parseFloat(document.getElementById("valorAtual").value);
       const aporteMensal = parseFloat(document.getElementById("aporteMensal").value);
       const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
+      const inflacao = parseFloat(document.getElementById("inflacao").value) / 100;
 
-      if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || isNaN(valorAtual) || isNaN(aporteMensal) || isNaN(taxaJuros)) {
+      if (isNaN(idadeAtual) || isNaN(idadeAposentadoria) || isNaN(valorAtual) || isNaN(aporteMensal) || isNaN(taxaJuros) || isNaN(inflacao)) {
         document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
         return;
       }
 
       const anos = idadeAposentadoria - idadeAtual;
       const meses = anos * 12;
-      const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+      const taxaMensalBruta = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+      const taxaMensalInflacao = Math.pow(1 + inflacao, 1 / 12) - 1;
+      const taxaReal = ((1 + taxaMensalBruta) / (1 + taxaMensalInflacao)) - 1;
 
-      let montante = valorAtual * Math.pow(1 + taxaMensal, meses);
+      let montante = valorAtual * Math.pow(1 + taxaReal, meses);
 
       for (let i = 1; i <= meses; i++) {
-        montante += aporteMensal * Math.pow(1 + taxaMensal, meses - i);
+        montante += aporteMensal * Math.pow(1 + taxaReal, meses - i);
       }
 
-      const valores = [];
-      const aportes = [];
-      const juros = [];
-      const labels = [];
+      const valores = [], aportes = [], juros = [], labels = [];
 
       for (let i = 0; i <= meses; i += 12) {
-        let total = valorAtual * Math.pow(1 + taxaMensal, i);
+        let total = valorAtual * Math.pow(1 + taxaReal, i);
         let totalAportes = valorAtual;
 
         for (let j = 1; j <= i; j++) {
-          total += aporteMensal * Math.pow(1 + taxaMensal, i - j);
+          total += aporteMensal * Math.pow(1 + taxaReal, i - j);
           totalAportes += aporteMensal;
         }
 
         const ganhoJuros = total - totalAportes;
         labels.push((idadeAtual + i / 12).toString());
-        valores.push(parseFloat(total.toFixed(2)));
-        aportes.push(parseFloat(totalAportes.toFixed(2)));
-        juros.push(parseFloat(ganhoJuros.toFixed(2)));
+        valores.push(Number(total.toFixed(2)));
+        aportes.push(Number(totalAportes.toFixed(2)));
+        juros.push(Number(ganhoJuros.toFixed(2)));
       }
 
-      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos: ${formatarValor(montante)}`;
+      document.getElementById("resultado").innerText = `Montante aos ${idadeAposentadoria} anos corrigido pela inflação: ${formatarValor(montante)}`;
       desenharGrafico(labels, valores, aportes, juros);
     }
 
     function desenharGrafico(labels, valores, aportes, juros) {
       const ctx = document.getElementById("grafico").getContext("2d");
-      if (window.myChart) {
-        window.myChart.destroy();
-      }
+      if (window.myChart) window.myChart.destroy();
+
       window.myChart = new Chart(ctx, {
-        type: "line",
+        type: "bar",
         data: {
-          labels: labels,
+          labels,
           datasets: [
             {
               label: "Montante Total",
               data: valores,
+              backgroundColor: "rgba(40, 167, 69, 0.6)",
               borderColor: "green",
-              backgroundColor: "rgba(40, 167, 69, 0.1)",
-              fill: true,
-              tension: 0.3,
+              borderWidth: 1,
             },
             {
               label: "Total Investido",
               data: aportes,
+              backgroundColor: "rgba(0, 123, 255, 0.6)",
               borderColor: "#007bff",
-              backgroundColor: "rgba(0, 123, 255, 0.1)",
-              fill: true,
-              tension: 0.3,
+              borderWidth: 1,
             },
             {
               label: "Juros Acumulados",
               data: juros,
+              backgroundColor: "rgba(255, 193, 7, 0.6)",
               borderColor: "#ffc107",
-              backgroundColor: "rgba(255, 193, 7, 0.1)",
-              fill: true,
-              tension: 0.3,
+              borderWidth: 1,
             }
-          ],
+          ]
         },
         options: {
+          responsive: true,
           scales: {
             y: {
+              beginAtZero: true,
               ticks: {
-                callback: function (value) {
-                  return formatarValor(value);
-                },
+                callback: value => formatarValor(value),
               },
-            },
+              title: {
+                display: true,
+                text: 'Valor em Reais'
+              }
+            }
           },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (tooltipItem) => `${tooltipItem.dataset.label}: ${formatarValor(tooltipItem.raw)}`
+              }
+            }
+          }
         },
       });
     }
