@@ -93,6 +93,7 @@
         <input type="number" id="rentabilidade" placeholder="10">
         <button onclick="calcularAposentadoria()">Calcular</button>
         <h3>Valor Estimado na Aposentadoria: <span id="resultadoAposentadoria"></span></h3>
+        <h4>Total Investido: <span id="totalInvestido"></span></h4>
         <canvas id="graficoAposentadoria"></canvas>
     </div>
 
@@ -136,6 +137,7 @@
             }
 
             document.getElementById('resultadoAposentadoria').innerText = formatarValor(montanteAtual);
+            document.getElementById('totalInvestido').innerText = formatarValor(totalAportes);
             desenharGrafico(labels, valores, aportesTotais);
         }
 
