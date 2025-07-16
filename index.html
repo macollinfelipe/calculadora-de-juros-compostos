@@ -45,8 +45,8 @@
           <input type="text" class="form-control" id="aporteMensal" value="500">
         </div>
         <div class="col-md-3">
-          <label for="taxaJuros" class="form-label">Taxa de Juros (% a.m.)</label>
-          <input type="text" class="form-control" id="taxaJuros" value="1">
+          <label for="taxaJuros" class="form-label">Taxa de Juros (% a.a.)</label>
+          <input type="text" class="form-control" id="taxaJuros" value="12">
         </div>
         <div class="col-md-3">
           <label for="periodo" class="form-label">Período (meses)</label>
@@ -90,15 +90,20 @@
     function calcularJuros() {
       const P = parseInput('valorInicial');
       const PMT = parseInput('aporteMensal');
-      const i = parseInput('taxaJuros') / 100;
+      const i_aa = parseInput('taxaJuros') / 100;
+      const i = Math.pow(1 + i_aa, 1 / 12) - 1; // taxa mensal equivalente
       const n = parseInt(document.getElementById('periodo').value);
 
       let montante = P;
-      let dados = [P];
+      let totalAportado = P;
+      let dadosMontante = [P];
+      let dadosAporte = [P];
 
       for (let t = 1; t <= n; t++) {
         montante = montante * (1 + i) + PMT;
-        dados.push(montante);
+        totalAportado += PMT;
+        dadosMontante.push(montante);
+        dadosAporte.push(totalAportado);
       }
 
       document.getElementById('resultadoTexto').innerText = `Você terá R$ ${montante.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ao final de ${n} meses.`;
@@ -110,20 +115,32 @@
         type: 'line',
         data: {
           labels: Array.from({ length: n + 1 }, (_, i) => i + 'º'),
-          datasets: [{
-            label: 'Evolução do Patrimônio',
-            data: dados,
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            tension: 0.3,
-            fill: true,
-            pointRadius: 2
-          }]
+          datasets: [
+            {
+              label: 'Montante Final',
+              data: dadosMontante,
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.1)',
+              tension: 0.3,
+              fill: true,
+              pointRadius: 2
+            },
+            {
+              label: 'Total Aportado',
+              data: dadosAporte,
+              borderColor: '#ffc107',
+              backgroundColor: 'rgba(255, 193, 7, 0.1)',
+              tension: 0.3,
+              fill: false,
+              borderDash: [5, 5],
+              pointRadius: 2
+            }
+          ]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { display: false }
+            legend: { display: true }
           },
           scales: {
             y: {
@@ -140,6 +157,7 @@
   </script>
 </body>
 </html>
+
 
 
 
