@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Aposentadoria</title>
+  <title>Simulador de Aposentadoria</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -32,37 +32,60 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="mb-4 text-center">Calculadora de Aposentadoria</h1>
+    <h1 class="mb-4 text-center">Simulador de Aposentadoria</h1>
 
     <div class="card p-4">
       <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Idade Atual</label>
+        <div class="col-md-4">
+          <label class="form-label">Quanto você ganha por mês? (R$)</label>
+          <input type="text" class="form-control" id="salarioMensal" value="5000">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Quanto você já tem investido? (R$)</label>
+          <input type="text" class="form-control" id="investidoAtual" value="50000">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Quantos % da sua renda você investe?</label>
+          <input type="number" class="form-control" id="percentualInvestimento" value="20">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Com quanto de patrimônio você quer se aposentar? (R$)</label>
+          <input type="text" class="form-control" id="metaAposentadoria" value="1000000">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Quanto pretende gastar por mês aposentado? (R$)</label>
+          <input type="text" class="form-control" id="gastoMensalAposentado" value="10000">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Sua rentabilidade anual projetada (%)</label>
+          <input type="number" class="form-control" id="rentabilidadeAnual" value="10">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Inflação anual estimada (%)</label>
+          <input type="number" class="form-control" id="inflacaoAnual" value="4">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Qual sua idade atual?</label>
           <input type="number" class="form-control" id="idadeAtual" value="30">
         </div>
-        <div class="col-md-3">
-          <label class="form-label">Idade para Aposentar</label>
+        <div class="col-md-4">
+          <label class="form-label">Com quantos anos você deseja se aposentar?</label>
           <input type="number" class="form-control" id="idadeAposentadoria" value="65">
         </div>
-        <div class="col-md-3">
-          <label class="form-label">Aporte Mensal (R$)</label>
-          <input type="text" class="form-control" id="aporteMensal" value="500">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Juros ao ano (%)</label>
-          <input type="text" class="form-control" id="taxaJuros" value="10">
-        </div>
       </div>
+
       <div class="text-center mt-4">
-        <button class="btn btn-dark" onclick="calcularAposentadoria()">Calcular</button>
+        <button class="btn btn-dark" onclick="simularAposentadoria()">Calcular</button>
       </div>
     </div>
 
     <div class="card p-4" id="resultadoCard" style="display:none">
-      <h3 class="mb-3">Estimativa de Patrimônio</h3>
+      <h3 class="mb-3">Resultado da Simulação</h3>
       <p id="resultadoTexto" class="fs-5"></p>
       <div class="chart-container mt-4">
-        <canvas id="graficoAposentadoria"></canvas>
+        <canvas id="graficoSimulacao"></canvas>
       </div>
     </div>
 
@@ -86,33 +109,46 @@
       input.addEventListener('input', () => formatNumberInput(input));
     });
 
-    function calcularAposentadoria() {
+    function simularAposentadoria() {
+      const salario = parseInput('salarioMensal');
+      const investido = parseInput('investidoAtual');
+      const percentual = parseInput('percentualInvestimento') / 100;
+      const aporteMensal = salario * percentual;
+
+      const meta = parseInput('metaAposentadoria');
       const idadeAtual = parseInt(document.getElementById('idadeAtual').value);
       const idadeFinal = parseInt(document.getElementById('idadeAposentadoria').value);
-      const anos = idadeFinal - idadeAtual;
-      const meses = anos * 12;
-      const PMT = parseInput('aporteMensal');
-      const i_aa = parseInput('taxaJuros') / 100;
-      const i = Math.pow(1 + i_aa, 1 / 12) - 1;
+      const gastoMensal = parseInput('gastoMensalAposentado');
+      const rentabilidadeAnual = parseInput('rentabilidadeAnual') / 100;
+      const inflacaoAnual = parseInput('inflacaoAnual') / 100;
 
-      let montante = 0;
-      let totalAportado = 0;
+      const meses = (idadeFinal - idadeAtual) * 12;
+      const taxaMensal = Math.pow(1 + rentabilidadeAnual, 1 / 12) - 1;
+      const inflacaoMensal = Math.pow(1 + inflacaoAnual, 1 / 12) - 1;
+
+      let montante = investido;
+      let totalAportado = investido;
       let dadosMontante = [];
       let dadosAporte = [];
+      let dadosMeta = [];
 
       for (let t = 1; t <= meses; t++) {
-        montante = montante * (1 + i) + PMT;
-        totalAportado += PMT;
+        montante = montante * (1 + taxaMensal) + aporteMensal;
+        totalAportado += aporteMensal;
         dadosMontante.push(montante);
         dadosAporte.push(totalAportado);
+        dadosMeta.push(meta);
       }
 
-      document.getElementById('resultadoTexto').innerText = `Você terá R$ ${montante.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} aos ${idadeFinal} anos.`;
+      const montanteReal = montante / Math.pow(1 + inflacaoMensal, meses);
+
+      document.getElementById('resultadoTexto').innerHTML = `Você terá <strong>R$ ${montante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> (valor nominal)<br>
+      ou <strong>R$ ${montanteReal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> ajustado pela inflação ao se aposentar.`;
       document.getElementById('resultadoCard').style.display = 'block';
 
-      const ctx = document.getElementById('graficoAposentadoria').getContext('2d');
-      if (window.graficoAposentadoria) window.graficoAposentadoria.destroy();
-      window.graficoAposentadoria = new Chart(ctx, {
+      const ctx = document.getElementById('graficoSimulacao').getContext('2d');
+      if (window.graficoSimulacao) window.graficoSimulacao.destroy();
+      window.graficoSimulacao = new Chart(ctx, {
         type: 'line',
         data: {
           labels: Array.from({ length: meses }, (_, i) => `${i + 1}º`),
@@ -135,6 +171,14 @@
               fill: false,
               borderDash: [5, 5],
               pointRadius: 0
+            },
+            {
+              label: 'Meta de Aposentadoria',
+              data: dadosMeta,
+              borderColor: '#dc3545',
+              borderDash: [10, 5],
+              pointRadius: 0,
+              fill: false
             }
           ]
         },
@@ -158,3 +202,4 @@
   </script>
 </body>
 </html>
+
