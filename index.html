@@ -38,15 +38,15 @@
       <div class="row g-3">
         <div class="col-md-3">
           <label for="valorInicial" class="form-label">Valor Inicial (R$)</label>
-          <input type="number" class="form-control" id="valorInicial" value="1000">
+          <input type="text" class="form-control" id="valorInicial" value="1.000">
         </div>
         <div class="col-md-3">
           <label for="aporteMensal" class="form-label">Aporte Mensal (R$)</label>
-          <input type="number" class="form-control" id="aporteMensal" value="500">
+          <input type="text" class="form-control" id="aporteMensal" value="500">
         </div>
         <div class="col-md-3">
           <label for="taxaJuros" class="form-label">Taxa de Juros (% a.m.)</label>
-          <input type="number" class="form-control" id="taxaJuros" value="1">
+          <input type="text" class="form-control" id="taxaJuros" value="1">
         </div>
         <div class="col-md-3">
           <label for="periodo" class="form-label">Período (meses)</label>
@@ -67,29 +67,43 @@
     </div>
 
     <footer>
-      <p>Gostou da calculadora? <a href="https://www.youtube.com/@seucanal" target="_blank">Inscreva-se no canal no YouTube</a></p>
+      <p>Gostou da calculadora? <a href="https://www.youtube.com/@macollinfelipe" target="_blank">Inscreva-se no canal no YouTube</a></p>
+      <p><a href="aposentadoria.html">→ Ir para a Calculadora de Aposentadoria</a></p>
     </footer>
   </div>
 
   <script>
+    function parseInput(id) {
+      const raw = document.getElementById(id).value.replace(/\./g, '').replace(',', '.');
+      return parseFloat(raw) || 0;
+    }
+
+    function formatNumberInput(el) {
+      const value = el.value.replace(/\D/g, '');
+      el.value = parseFloat(value).toLocaleString('pt-BR');
+    }
+
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+      input.addEventListener('input', () => formatNumberInput(input));
+    });
+
     function calcularJuros() {
-      const P = parseFloat(document.getElementById('valorInicial').value);
-      const PMT = parseFloat(document.getElementById('aporteMensal').value);
-      const i = parseFloat(document.getElementById('taxaJuros').value) / 100;
+      const P = parseInput('valorInicial');
+      const PMT = parseInput('aporteMensal');
+      const i = parseInput('taxaJuros') / 100;
       const n = parseInt(document.getElementById('periodo').value);
 
       let montante = P;
       let dados = [P];
 
       for (let t = 1; t <= n; t++) {
-        montante = (montante + PMT) * (1 + i);
+        montante = montante * (1 + i) + PMT;
         dados.push(montante);
       }
 
-      document.getElementById('resultadoTexto').innerText = `Você terá R$ ${montante.toFixed(2).replace('.', ',')} ao final de ${n} meses.`;
+      document.getElementById('resultadoTexto').innerText = `Você terá R$ ${montante.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ao final de ${n} meses.`;
       document.getElementById('resultadoCard').style.display = 'block';
 
-      // Gerar gráfico
       const ctx = document.getElementById('graficoJuros').getContext('2d');
       if (window.grafico) window.grafico.destroy();
       window.grafico = new Chart(ctx, {
@@ -126,5 +140,6 @@
   </script>
 </body>
 </html>
+
 
 
