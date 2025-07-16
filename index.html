@@ -1,282 +1,129 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calculadora de Juros Compostos</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
-
     body {
-      background-color: #f8f9fa;
-      padding: 20px;
-      color: #333;
+      background-color: #ffffff;
+      color: #000000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
     }
-
-    nav {
-      background-color: #28a745;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 30px;
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 0 1rem rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    footer {
+      margin-top: 4rem;
       text-align: center;
-    }
-
-    nav a {
-      color: white;
-      font-weight: bold;
-      text-decoration: none;
-      margin: 0 20px;
-      transition: color 0.3s;
-    }
-
-    nav a:hover {
-      color: #d4f5d6;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      color: #28a745;
-      text-align: center;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-      background-color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    label {
-      margin-top: 15px;
-      display: block;
-      font-weight: bold;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    input {
-      step: 0.01;
-    }
-
-    button {
-      background-color: #28a745;
-      color: white;
-      font-weight: bold;
-      margin-top: 20px;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background-color: #218838;
-    }
-
-    .resultado {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-      text-align: center;
-    }
-
-    canvas {
-      margin-top: 30px;
-      width: 100% !important;
-      height: auto !important;
-    }
-
-    a.voltar {
-      display: block;
-      text-align: center;
-      margin-top: 30px;
-      color: #007bff;
-      text-decoration: none;
-    }
-
-    a.voltar:hover {
-      text-decoration: underline;
+      font-size: 0.9rem;
+      color: #666;
     }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">Início</a>
-    <a href="index.html">Juros Compostos</a>
-    <a href="aposentadoria.html">Aposentadoria</a>
-    <a href="sobre.html">Sobre Mim</a>
-  </nav>
-
   <div class="container">
-    <h2>Calculadora de Juros Compostos</h2>
+    <h1 class="mb-4 text-center">Calculadora de Juros Compostos</h1>
 
-    <label for="valorInicial">Valor Inicial (R$):</label>
-    <input type="text" id="valorInicial" placeholder="Ex: 1.000,00" />
+    <div class="card p-4">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="valorInicial" class="form-label">Valor Inicial (R$)</label>
+          <input type="number" class="form-control" id="valorInicial" value="1000">
+        </div>
+        <div class="col-md-3">
+          <label for="aporteMensal" class="form-label">Aporte Mensal (R$)</label>
+          <input type="number" class="form-control" id="aporteMensal" value="500">
+        </div>
+        <div class="col-md-3">
+          <label for="taxaJuros" class="form-label">Taxa de Juros (% a.m.)</label>
+          <input type="number" class="form-control" id="taxaJuros" value="1">
+        </div>
+        <div class="col-md-3">
+          <label for="periodo" class="form-label">Período (meses)</label>
+          <input type="number" class="form-control" id="periodo" value="12">
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <button class="btn btn-dark" onclick="calcularJuros()">Calcular</button>
+      </div>
+    </div>
 
-    <label for="aporteMensal">Aporte Mensal (R$):</label>
-    <input type="text" id="aporteMensal" placeholder="Ex: 100,00" />
+    <div class="card p-4" id="resultadoCard" style="display:none">
+      <h3 class="mb-3">Resultado Final</h3>
+      <p id="resultadoTexto" class="fs-5"></p>
+      <div class="chart-container mt-4">
+        <canvas id="graficoJuros"></canvas>
+      </div>
+    </div>
 
-    <label for="taxaJuros">Taxa de Juros (% ao ano):</label>
-    <input type="number" id="taxaJuros" placeholder="Ex: 10" step="0.01" />
-
-    <label for="periodo">Período (em anos):</label>
-    <input type="number" id="periodo" placeholder="Ex: 10" />
-
-    <button onclick="calcularJurosCompostos()">Calcular</button>
-
-    <div class="resultado" id="resultado"></div>
-
-    <canvas id="grafico"></canvas>
-
-    <a class="voltar" href="index.html">&#8592; Voltar à Página Principal</a>
+    <footer>
+      <p>Gostou da calculadora? <a href="https://www.youtube.com/@seucanal" target="_blank">Inscreva-se no canal no YouTube</a></p>
+    </footer>
   </div>
 
-<script>
-  function formatarValor(valor) {
-    return valor.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+  <script>
+    function calcularJuros() {
+      const P = parseFloat(document.getElementById('valorInicial').value);
+      const PMT = parseFloat(document.getElementById('aporteMensal').value);
+      const i = parseFloat(document.getElementById('taxaJuros').value) / 100;
+      const n = parseInt(document.getElementById('periodo').value);
 
-  function parseReal(valor) {
-    return parseFloat(valor.replace(/[.]/g, "").replace(",", "."));
-  }
+      let montante = P;
+      let dados = [P];
 
-  function adicionarMascaraReal(input) {
-    input.addEventListener("input", () => {
-      let valor = input.value.replace(/[^\d]/g, "");
-      valor = (parseInt(valor, 10) / 100).toFixed(2);
-      input.value = Number(valor).toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    adicionarMascaraReal(document.getElementById("valorInicial"));
-    adicionarMascaraReal(document.getElementById("aporteMensal"));
-  });
-
-  function calcularJurosCompostos() {
-    const valorInicial = parseReal(document.getElementById("valorInicial").value);
-    const aporteMensal = parseReal(document.getElementById("aporteMensal").value);
-    const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
-    const periodo = parseInt(document.getElementById("periodo").value);
-
-    if (isNaN(valorInicial) || isNaN(aporteMensal) || isNaN(taxaJuros) || isNaN(periodo)) {
-      document.getElementById("resultado").innerText = "Preencha todos os campos corretamente!";
-      return;
-    }
-
-    const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
-    const meses = periodo * 12;
-    let montante = valorInicial * Math.pow(1 + taxaMensal, meses);
-
-    for (let i = 1; i <= meses; i++) {
-      montante += aporteMensal * Math.pow(1 + taxaMensal, meses - i);
-    }
-
-    const valores = [];
-    const aportes = [];
-    const juros = [];
-    const labels = [];
-
-    for (let i = 0; i <= meses; i += 12) {
-      let total = valorInicial * Math.pow(1 + taxaMensal, i);
-      let totalAportes = valorInicial;
-
-      for (let j = 1; j <= i; j++) {
-        total += aporteMensal * Math.pow(1 + taxaMensal, i - j);
-        totalAportes += aporteMensal;
+      for (let t = 1; t <= n; t++) {
+        montante = (montante + PMT) * (1 + i);
+        dados.push(montante);
       }
 
-      const ganhoJuros = total - totalAportes;
-      labels.push((i / 12).toString() + " ano" + (i / 12 > 1 ? "s" : ""));
-      valores.push(Number(total.toFixed(2)));
-      aportes.push(Number(totalAportes.toFixed(2)));
-      juros.push(Number(ganhoJuros.toFixed(2)));
-    }
+      document.getElementById('resultadoTexto').innerText = `Você terá R$ ${montante.toFixed(2).replace('.', ',')} ao final de ${n} meses.`;
+      document.getElementById('resultadoCard').style.display = 'block';
 
-    document.getElementById("resultado").innerText = `Montante final: ${formatarValor(Number(montante.toFixed(2)))}`;
-    desenharGrafico(labels, valores, aportes, juros);
-  }
-
-  function desenharGrafico(labels, valores, aportes, juros) {
-    const ctx = document.getElementById("grafico").getContext("2d");
-    if (window.myChart) {
-      window.myChart.destroy();
-    }
-    window.myChart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: "Montante Total",
-            data: valores,
-            borderColor: "green",
-            backgroundColor: "rgba(40, 167, 69, 0.1)",
-            fill: true,
+      // Gerar gráfico
+      const ctx = document.getElementById('graficoJuros').getContext('2d');
+      if (window.grafico) window.grafico.destroy();
+      window.grafico = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: n + 1 }, (_, i) => i + 'º'),
+          datasets: [{
+            label: 'Evolução do Patrimônio',
+            data: dados,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
             tension: 0.3,
+            fill: true,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
           },
-          {
-            label: "Total Investido",
-            data: aportes,
-            borderColor: "#007bff",
-            backgroundColor: "rgba(0, 123, 255, 0.1)",
-            fill: true,
-            tension: 0.3,
-          },
-          {
-            label: "Juros Acumulados",
-            data: juros,
-            borderColor: "#ffc107",
-            backgroundColor: "rgba(255, 193, 7, 0.1)",
-            fill: true,
-            tension: 0.3,
+          scales: {
+            y: {
+              ticks: {
+                callback: function (value) {
+                  return 'R$ ' + value.toLocaleString('pt-BR');
+                }
+              }
+            }
           }
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                return `${context.dataset.label}: ${formatarValor(context.parsed.y)}`;
-              },
-            },
-          },
-        },
-        scales: {
-          y: {
-            ticks: {
-              callback: function (value) {
-                return formatarValor(value);
-              },
-            },
-          },
-        },
-      },
-    });
-  }
-</script>
+        }
+      });
+    }
+  </script>
 </body>
 </html>
+
