@@ -2,33 +2,37 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Juros Compostos</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background-color: #fff;
       color: #000;
       font-family: Arial, sans-serif;
+      padding-top: 70px;
       padding-bottom: 50px;
     }
-
+    .navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+    }
     .container {
       max-width: 800px;
     }
-
     .card {
       border: none;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       border-radius: 12px;
     }
-
     .form-control {
       text-align: right;
     }
-
     .resultado {
       font-size: 1.25rem;
       font-weight: bold;
@@ -38,10 +42,15 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-light bg-light shadow-sm mb-4">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="#">Calculadora de Juros Compostos</a>
-      <a href="aposentadoria.html" class="btn btn-outline-dark btn-sm">→ Simulador de Aposentadoria</a>
+      <a class="navbar-brand fw-bold" href="#">💰 Simuladores Financeiros</a>
+      <div>
+        <a href="index.html" class="btn btn-outline-primary btn-sm me-2"><i class="bi bi-graph-up"></i> Juros</a>
+        <a href="aposentadoria.html" class="btn btn-outline-success btn-sm me-2"><i class="bi bi-person-check"></i> Aposentadoria</a>
+        <a href="#" class="btn btn-outline-warning btn-sm me-2 disabled"><i class="bi bi-fire"></i> FIRE (em breve)</a>
+        <a href="#" class="btn btn-outline-danger btn-sm disabled"><i class="bi bi-cash-coin"></i> Gastos (em breve)</a>
+      </div>
     </div>
   </nav>
 
@@ -50,19 +59,19 @@
       <form id="formulario">
         <div class="mb-3">
           <label for="capital" class="form-label">Capital Inicial (R$)</label>
-          <input type="text" class="form-control" id="capital" required />
+          <input type="text" class="form-control" id="capital" required>
         </div>
         <div class="mb-3">
           <label for="aporte" class="form-label">Aporte Mensal (R$)</label>
-          <input type="text" class="form-control" id="aporte" required />
+          <input type="text" class="form-control" id="aporte" required>
         </div>
         <div class="mb-3">
           <label for="taxa" class="form-label">Rentabilidade Anual (%)</label>
-          <input type="number" class="form-control" id="taxa" step="0.01" required />
+          <input type="number" class="form-control" id="taxa" step="0.01" required>
         </div>
         <div class="mb-3">
           <label for="periodo" class="form-label">Período (anos)</label>
-          <input type="number" class="form-control" id="periodo" required />
+          <input type="number" class="form-control" id="periodo" required>
         </div>
         <button type="submit" class="btn btn-dark w-100">Calcular</button>
       </form>
@@ -96,17 +105,16 @@
 
       const capital = parseReal(document.getElementById('capital').value);
       const aporteMensal = parseReal(document.getElementById('aporte').value);
-      const taxa = parseFloat(document.getElementById('taxa').value) / 100;
+      const taxaAnual = parseFloat(document.getElementById('taxa').value) / 100;
       const anos = parseInt(document.getElementById('periodo').value);
-      const meses = anos * 12;
+      const taxaMensal = Math.pow(1 + taxaAnual, 1 / 12) - 1;
 
       let saldo = capital;
       let historico = [];
 
       for (let i = 1; i <= anos; i++) {
         for (let m = 0; m < 12; m++) {
-          saldo *= (1 + taxa / 12);
-          saldo += aporteMensal;
+          saldo = saldo * (1 + taxaMensal) + aporteMensal;
         }
         historico.push({ ano: i, saldo: saldo });
       }
@@ -125,9 +133,7 @@
               label: 'Saldo Acumulado',
               data: historico.map(h => h.saldo),
               borderColor: 'blue',
-              backgroundColor: 'rgba(0, 0, 255, 0.1)',
-              tension: 0.1,
-              fill: true
+              tension: 0.1
             }
           ]
         },
@@ -135,11 +141,7 @@
           responsive: true,
           plugins: {
             legend: { position: 'bottom' },
-            tooltip: {
-              callbacks: {
-                label: ctx => formatarNumero(ctx.parsed.y)
-              }
-            }
+            tooltip: { callbacks: { label: ctx => formatarNumero(ctx.parsed.y) } }
           }
         }
       });
@@ -148,7 +150,6 @@
 </body>
 
 </html>
-
 
 
 
