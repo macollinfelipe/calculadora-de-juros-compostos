@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,240 +11,159 @@
     body {
       background-color: #fff;
       color: #000;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 2rem;
+      font-family: Arial, sans-serif;
+      padding-bottom: 50px;
+    }
+    .container {
+      max-width: 800px;
     }
     .card {
-      border-radius: 1rem;
-      box-shadow: 0 0 1rem rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
     }
-    .chart-container {
-      position: relative;
-      height: 300px;
+    .form-control {
+      text-align: right;
     }
-    .result-boxes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .result-box {
-      flex: 1 1 200px;
-      padding: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .result-success {
-      color: green;
+    .resultado {
+      font-size: 1.25rem;
       font-weight: bold;
-    }
-    .result-warning {
-      color: red;
-      font-weight: bold;
-    }
-    footer {
-      margin-top: 4rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #666;
+      margin-top: 20px;
     }
   </style>
 </head>
+
 <body>
+  <nav class="navbar navbar-light bg-light shadow-sm mb-4">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">Simulador de Aposentadoria</a>
+      <a href="index.html" class="btn btn-outline-dark btn-sm">← Juros Compostos</a>
+    </div>
+  </nav>
+
   <div class="container">
-    <h1 class="mb-4 text-center">Simulador de Aposentadoria</h1>
-
     <div class="card p-4">
-      <!-- campos de entrada mantidos -->
-      <!-- ... (conteúdo igual até o botão calcular) ... -->
-
-      <div class="text-center mt-4">
-        <button class="btn btn-dark" onclick="simularAposentadoria()">Calcular</button>
-      </div>
+      <form id="formulario">
+        <div class="mb-3">
+          <label for="salario" class="form-label">Salário Atual (R$)</label>
+          <input type="text" class="form-control" id="salario" required>
+        </div>
+        <div class="mb-3">
+          <label for="aporte" class="form-label">Aporte Mensal (R$)</label>
+          <input type="text" class="form-control" id="aporte" required>
+        </div>
+        <div class="mb-3">
+          <label for="idade" class="form-label">Idade Atual</label>
+          <input type="number" class="form-control" id="idade" required>
+        </div>
+        <div class="mb-3">
+          <label for="idadeAposentadoria" class="form-label">Idade para Aposentadoria</label>
+          <input type="number" class="form-control" id="idadeAposentadoria" required>
+        </div>
+        <div class="mb-3">
+          <label for="meta" class="form-label">Meta de Patrimônio (R$)</label>
+          <input type="text" class="form-control" id="meta" required>
+        </div>
+        <div class="mb-3">
+          <label for="rentabilidade" class="form-label">Rentabilidade Anual (%)</label>
+          <input type="number" class="form-control" id="rentabilidade" step="0.01" required>
+        </div>
+        <div class="mb-3">
+          <label for="inflacao" class="form-label">Inflação Anual (%)</label>
+          <input type="number" class="form-control" id="inflacao" step="0.01" required>
+        </div>
+        <button type="submit" class="btn btn-dark w-100">Calcular</button>
+      </form>
     </div>
 
-    <div class="card p-4" id="resultadoCard" style="display:none">
-      <h3 class="mb-3">Resultado da Simulação</h3>
-      <div id="mensagemPrincipal" class="alert alert-success"></div>
-      <div id="mensagemSecundaria" class="alert alert-light"></div>
-
-      <div class="result-boxes">
-        <div class="result-box">
-          <h6>Você se aposentará com</h6>
-          <div id="valorFinal"></div>
-          <small id="textoAporte"></small>
-        </div>
-        <div class="result-box">
-          <h6>Deixará de herança</h6>
-          <div id="valorHeranca" class="result-success"></div>
-          <small>Baseado numa expectativa média de 72 anos.</small>
-        </div>
-        <div class="result-box">
-          <h6>Poderá gastar por mês</h6>
-          <div id="valorGastoMensal"></div>
-          <small>Para seu dinheiro nunca acabar.</small>
-        </div>
-        <div class="result-box">
-          <h6>Você passou da sua meta</h6>
-          <div id="valorExcedente" class="result-success"></div>
-          <small>Parabéns!</small>
-        </div>
-      </div>
-
-      <div class="chart-container mt-4">
-        <canvas id="graficoSimulacao"></canvas>
-      </div>
-    </div>
-
-    <footer>
-      <p><a href="index.html">← Voltar para a Calculadora de Juros Compostos</a></p>
-    </footer>
+    <div id="resultado" class="resultado text-center mt-4"></div>
+    <canvas id="grafico" class="mt-4"></canvas>
   </div>
 
   <script>
-    function parseInput(id) {
-      const raw = document.getElementById(id).value.replace(/\./g, '').replace(',', '.');
-      return parseFloat(raw) || 0;
+    function formatarNumero(valor) {
+      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
-    function formatNumberInput(el) {
-      let numbers = el.value.replace(/[^\d]/g, '');
-      let formatted = parseFloat(numbers).toLocaleString('pt-BR');
-      el.value = formatted;
+    function parseReal(str) {
+      return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
     }
 
-    document.querySelectorAll('input[type="text"]').forEach(input => {
-      input.addEventListener('input', () => formatNumberInput(input));
-    });
+    function formatarInput(id) {
+      const input = document.getElementById(id);
+      input.addEventListener('input', () => {
+        const valor = input.value.replace(/\D/g, '');
+        input.value = new Intl.NumberFormat('pt-BR').format(valor);
+      });
+    }
 
-    function simularAposentadoria() {
-      const salario = parseInput('salarioMensal');
-      const investido = parseInput('investidoAtual');
-      const percentual = parseInput('percentualInvestimento') / 100;
-      const aporteMensal = salario * percentual;
+    ['salario', 'aporte', 'meta'].forEach(id => formatarInput(id));
 
-      const meta = parseInput('metaAposentadoria');
-      const idadeAtual = parseInt(document.getElementById('idadeAtual').value);
-      const idadeFinal = parseInt(document.getElementById('idadeAposentadoria').value);
-      const gastoMensal = parseInput('gastoMensalAposentado');
-      const rentabilidadeAnual = parseInput('rentabilidadeAnual') / 100;
-      const inflacaoAnual = parseInput('inflacaoAnual') / 100;
+    document.getElementById('formulario').addEventListener('submit', function (e) {
+      e.preventDefault();
 
-      const meses = (idadeFinal - idadeAtual) * 12;
-      const taxaMensal = Math.pow(1 + rentabilidadeAnual, 1 / 12) - 1;
-      const inflacaoMensal = Math.pow(1 + inflacaoAnual, 1 / 12) - 1;
+      const idadeAtual = parseInt(document.getElementById('idade').value);
+      const idadeAposentadoria = parseInt(document.getElementById('idadeAposentadoria').value);
+      const anos = idadeAposentadoria - idadeAtual;
 
-      let montante = investido;
-      let totalAportado = investido;
-      let dadosMontante = [];
-      let dadosMontanteReal = [];
-      let dadosAporte = [];
-      let dadosMeta = [];
+      const salario = parseReal(document.getElementById('salario').value);
+      const aporteMensal = parseReal(document.getElementById('aporte').value);
+      const meta = parseReal(document.getElementById('meta').value);
+      const rentabilidade = parseFloat(document.getElementById('rentabilidade').value) / 100;
+      const inflacao = parseFloat(document.getElementById('inflacao').value) / 100;
 
-      for (let t = 1; t <= meses; t++) {
-        montante = montante * (1 + taxaMensal) + aporteMensal;
-        totalAportado += aporteMensal;
-        dadosMontante.push(montante);
-        dadosMontanteReal.push(montante / Math.pow(1 + inflacaoMensal, t));
-        dadosAporte.push(totalAportado);
-        dadosMeta.push(meta);
+      let saldo = 0;
+      let historico = [];
+
+      for (let i = 1; i <= anos; i++) {
+        for (let m = 0; m < 12; m++) {
+          saldo *= (1 + rentabilidade / 12);
+          saldo += aporteMensal;
+        }
+        historico.push({ ano: idadeAtual + i, saldo: saldo });
       }
 
-      const montanteFinal = montante;
-      const montanteReal = montanteFinal / Math.pow(1 + inflacaoMensal, meses);
-      const expectativaVida = 72;
-      const anosAposentado = Math.max(0, expectativaVida - idadeFinal);
-      const mesesAposentado = anosAposentado * 12;
+      const saldoReal = saldo / Math.pow(1 + inflacao, anos);
 
-      let heranca = montanteFinal;
-      for (let i = 0; i < mesesAposentado; i++) {
-        heranca = heranca * (1 + taxaMensal) - gastoMensal;
-      }
-      heranca = Math.max(0, heranca);
+      const atingiuMeta = saldo >= meta;
+      const texto = atingiuMeta
+        ? `🎉 Parabéns! Você atingirá sua meta de R$ ${meta.toLocaleString('pt-BR')} aos ${idadeAposentadoria} anos.`
+        : `⚠️ Você não atingirá sua meta. Seu patrimônio estimado será de ${formatarNumero(saldo)}.`;
 
-      const gastoMensalMax = montanteFinal * taxaMensal;
+      document.getElementById('resultado').innerText = texto;
 
-      const excedente = montanteFinal - meta;
-
-      document.getElementById('mensagemPrincipal').innerHTML = excedente >= 0 ?
-        'Parabéns! Você já atingiu sua meta de aposentadoria com os investimentos atuais.' :
-        'Você ainda não atingiu sua meta de aposentadoria. Confira os valores abaixo para ajustar seu plano.';
-
-      document.getElementById('mensagemSecundaria').innerHTML =
-        `Você poderá gastar até R$${gastoMensal.toLocaleString('pt-BR', {minimumFractionDigits: 2})} por mês e ainda deixará uma herança de R$${heranca.toLocaleString('pt-BR', {minimumFractionDigits: 2})}.`;
-
-      document.getElementById('valorFinal').innerText = `R$${montanteFinal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-      document.getElementById('textoAporte').innerText = `Aportando R$${aporteMensal.toLocaleString('pt-BR')} por ${idadeFinal - idadeAtual} anos.`;
-      document.getElementById('valorHeranca').innerText = `R$${heranca.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-      document.getElementById('valorGastoMensal').innerText = `R$${gastoMensalMax.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-      document.getElementById('valorExcedente').innerText = `R$${excedente.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-
-      document.getElementById('resultadoCard').style.display = 'block';
-
-      const ctx = document.getElementById('graficoSimulacao').getContext('2d');
-      if (window.graficoSimulacao) window.graficoSimulacao.destroy();
-      window.graficoSimulacao = new Chart(ctx, {
+      const ctx = document.getElementById('grafico').getContext('2d');
+      if (window.graficoAposentadoria) window.graficoAposentadoria.destroy();
+      window.graficoAposentadoria = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: Array.from({ length: meses }, (_, i) => `${i + 1}º`),
+          labels: historico.map(h => h.ano),
           datasets: [
             {
-              label: 'Montante Projetado (nominal)',
-              data: dadosMontante,
-              borderColor: '#198754',
-              backgroundColor: 'rgba(25, 135, 84, 0.1)',
-              tension: 0.3,
-              fill: true,
-              pointRadius: 0
+              label: 'Valor Nominal',
+              data: historico.map(h => h.saldo),
+              borderColor: 'green',
+              tension: 0.1
             },
             {
-              label: 'Montante Ajustado (valor real)',
-              data: dadosMontanteReal,
-              borderColor: '#0d6efd',
-              backgroundColor: 'rgba(13, 110, 253, 0.1)',
-              tension: 0.3,
-              fill: true,
-              pointRadius: 0
-            },
-            {
-              label: 'Total Aportado',
-              data: dadosAporte,
-              borderColor: '#ffc107',
-              backgroundColor: 'rgba(255, 193, 7, 0.1)',
-              tension: 0.3,
-              fill: false,
+              label: 'Valor Real (ajustado pela inflação)',
+              data: historico.map((h, i) => h.saldo / Math.pow(1 + inflacao, i + 1)),
+              borderColor: 'orange',
               borderDash: [5, 5],
-              pointRadius: 0
-            },
-            {
-              label: 'Meta de Aposentadoria',
-              data: dadosMeta,
-              borderColor: '#dc3545',
-              borderDash: [10, 5],
-              pointRadius: 0,
-              fill: false
+              tension: 0.1
             }
           ]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { display: true }
-          },
-          scales: {
-            y: {
-              ticks: {
-                callback: function (value) {
-                  return 'R$ ' + value.toLocaleString('pt-BR');
-                }
-              }
-            }
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => formatarNumero(ctx.parsed.y) } }
           }
         }
       });
-    }
+    });
   </script>
 </body>
+
 </html>
