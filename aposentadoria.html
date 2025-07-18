@@ -230,41 +230,42 @@
       const anosParaAposentadoria = idadeAposentadoria - idadeAtual;
       const mesesParaAposentadoria = anosParaAposentadoria * 12;
 
-      // Taxa de juros mensal equivalente e taxa de inflação mensal equivalente
-      const taxaMensalReal = (1 + taxaJurosAnual) / (1 + inflacaoAnual) - 1; // Rentabilidade Real (descontada a inflação)
-      const taxaMensalNominal = Math.pow(1 + taxaJurosAnual, 1 / 12) - 1;
+      // Taxas mensais equivalentes
+      const taxaJurosMensal = Math.pow(1 + taxaJurosAnual, 1 / 12) - 1;
       const taxaInflacaoMensal = Math.pow(1 + inflacaoAnual, 1 / 12) - 1;
+      const taxaRealMensal = (1 + taxaJurosMensal) / (1 + taxaInflacaoMensal) - 1;
 
 
       let saldoNominal = patrimonioAtual;
-      let saldoReal = patrimonioAtual; // Saldo já corrigido pela inflação
-      let totalAportado = patrimonioAtual;
+      let saldoReal = patrimonioAtual; // Este saldo já é o poder de compra no momento 0
+      let totalAportadoNominal = patrimonioAtual; // Apenas o valor dos aportes e patrimônio inicial
+
 
       let historicoNominal = [{ ano: 0, saldo: patrimonioAtual }];
       let historicoReal = [{ ano: 0, saldo: patrimonioAtual }];
       let historicoAportado = [{ ano: 0, saldo: patrimonioAtual }];
-      let labelsGrafico = ['Ano 0 (Idade ' + idadeAtual + ')'];
+      let labelsGrafico = [`Ano 0 (Idade ${idadeAtual})`];
 
-      for (let ano = 1; ano <= anosParaAposentadoria; ano++) {
-        // Acumula os aportes e juros mensalmente
-        for (let mes = 1; mes <= 12; mes++) {
-          saldoNominal = saldoNominal * (1 + taxaMensalNominal) + aporteMensal;
-          saldoReal = saldoReal * (1 + taxaMensalReal) + (aporteMensal / Math.pow(1 + taxaInflacaoMensal, mes)); // Aporte corrigido para o mês
-          // Para o total aportado, somamos o valor nominal dos aportes
-          if (mes === 1) { // Apenas para o primeiro mês do ano, já que o loop é por meses
-              // totalAportado += aporteMensal; // Isso acumularia mensalmente, mas queremos o total nominal acumulado
-          }
+      // Loop mensal para maior precisão, mas coletando dados anualmente para o gráfico
+      for (let mes = 1; mes <= mesesParaAposentadoria; mes++) {
+        saldoNominal = saldoNominal * (1 + taxaJurosMensal) + aporteMensal;
+        saldoReal = saldoReal * (1 + taxaRealMensal) + aporteMensal; // Aporte mensal é em valores de hoje
+
+        totalAportadoNominal += aporteMensal;
+
+        // Se for o final de um ano, salve os dados para o gráfico
+        if (mes % 12 === 0) {
+          const anoAtual = mes / 12;
+          historicoNominal.push({ ano: anoAtual, saldo: saldoNominal });
+          historicoReal.push({ ano: anoAtual, saldo: saldoReal });
+          historicoAportado.push({ ano: anoAtual, saldo: totalAportadoNominal });
+          labelsGrafico.push(`Ano ${anoAtual} (Idade ${idadeAtual + anoAtual})`);
         }
-        totalAportado += (aporteMensal * 12); // Soma o aporte total do ano
-
-        historicoNominal.push({ ano: ano, saldo: saldoNominal });
-        historicoReal.push({ ano: ano, saldo: saldoReal });
-        historicoAportado.push({ ano: ano, saldo: totalAportado });
-        labelsGrafico.push(`Ano ${ano} (Idade ${idadeAtual + ano})`);
       }
 
+      // O último valor de saldo nominal e real já é o final
       const saldoFinalNominal = saldoNominal;
-      const saldoFinalReal = saldoReal; // Já está corrigido pela inflação ao final do período
+      const saldoFinalReal = saldoReal;
 
       resultadoDiv.innerHTML = `
         <p>Valor projetado (nominal) ao se aposentar: <br/><span class="text-success">R$ ${saldoFinalNominal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
@@ -290,7 +291,7 @@
               pointRadius: 3
             },
             {
-              label: "Patrimônio Acumulado (Real, poder de compra atual)",
+              label: "Patrimônio Acumulado (Poder de Compra Atual)",
               data: historicoReal.map(item => item.saldo),
               borderColor: "#198754", /* Verde para real */
               backgroundColor: "rgba(25, 135, 84, 0.1)",
@@ -299,7 +300,7 @@
               pointRadius: 3
             },
             {
-              label: "Total Aportado",
+              label: "Total Aportado (Nominal)",
               data: historicoAportado.map(item => item.saldo),
               borderColor: "#ffc107",
               backgroundColor: "rgba(255, 193, 7, 0.1)",
@@ -359,6 +360,23 @@
       formatCurrencyInput(document.getElementById('patrimonioAtual'));
       formatPercentInput(document.getElementById('taxaJuros'));
       formatPercentInput(document.getElementById('inflacao'));
+
+      // Validação inicial para idade de aposentadoria ser maior que a atual
+      const idadeAtualInput = document.getElementById('idadeAtual');
+      const idadeAposentadoriaInput = document.getElementById('idadeAposentadoria');
+
+      const validateAposentadoriaAge = () => {
+        const idadeAtual = parseInt(idadeAtualInput.value);
+        const idadeAposentadoria = parseInt(idadeAposentadoriaInput.value);
+        if (idadeAposentadoria <= idadeAtual) {
+            idadeAposentadoriaInput.setCustomValidity('A idade de aposentadoria deve ser maior que a idade atual.');
+        } else {
+            idadeAposentadoriaInput.setCustomValidity('');
+        }
+      };
+
+      idadeAtualInput.addEventListener('input', validateAposentadoriaAge);
+      idadeAposentadoriaInput.addEventListener('input', validateAposentadoriaAge);
     });
   </script>
 </body>
