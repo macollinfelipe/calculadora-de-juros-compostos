@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simulador de Aposentadoria</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #ffffff;
       color: #000000;
       padding-top: 70px;
+      padding-bottom: 2rem; /* Adicionado para espaço no rodapé */
     }
     .navbar {
       background-color: #ffffff;
@@ -26,9 +28,21 @@
     .resultado {
       font-size: 1.25rem;
       font-weight: bold;
+      margin-top: 2rem; /* Espaçamento ajustado */
     }
-    canvas {
-      margin-top: 40px;
+    .chart-container {
+      position: relative;
+      height: 350px; /* Altura do gráfico ajustada */
+      margin-top: 2rem; /* Espaçamento ajustado */
+    }
+    .is-invalid {
+      border-color: #dc3545 !important;
+    }
+    footer {
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #666;
     }
   </style>
 </head>
@@ -48,7 +62,7 @@
             <a class="nav-link" href="aposentadoria.html">Aposentadoria</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="https://www.youtube.com/@macollinfelipe" target="_blank">YouTube</a>
+            <a class="nav-link" href="https://youtube.com/@macollinfelipe?si=c_oSgiIYVRYM_ldy" target="_blank">YouTube</a>
           </li>
         </ul>
       </div>
@@ -61,101 +75,264 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label for="idadeAtual" class="form-label">Idade Atual</label>
-          <input type="number" class="form-control" id="idadeAtual" required />
+          <input type="number" class="form-control" id="idadeAtual" value="30" min="1" required />
+          <div class="invalid-feedback">
+            Por favor, insira sua idade atual (número inteiro).
+          </div>
         </div>
         <div class="col-md-6">
           <label for="idadeAposentadoria" class="form-label">Idade Desejada para Aposentadoria</label>
-          <input type="number" class="form-control" id="idadeAposentadoria" required />
+          <input type="number" class="form-control" id="idadeAposentadoria" value="65" min="1" required />
+          <div class="invalid-feedback">
+            Por favor, insira a idade desejada para aposentadoria (número inteiro).
+          </div>
         </div>
         <div class="col-md-6">
           <label for="aporteMensal" class="form-label">Aporte Mensal (R$)</label>
-          <input type="text" class="form-control valor" id="aporteMensal" required />
+          <input type="text" class="form-control valor" id="aporteMensal" value="500,00" inputmode="numeric" required />
+          <div class="invalid-feedback">
+            Por favor, insira um valor de aporte mensal válido.
+          </div>
         </div>
         <div class="col-md-6">
           <label for="patrimonioAtual" class="form-label">Patrimônio Atual (R$)</label>
-          <input type="text" class="form-control valor" id="patrimonioAtual" required />
+          <input type="text" class="form-control valor" id="patrimonioAtual" value="10.000,00" inputmode="numeric" required />
+          <div class="invalid-feedback">
+            Por favor, insira seu patrimônio atual válido.
+          </div>
         </div>
         <div class="col-md-6">
           <label for="taxaJuros" class="form-label">Rentabilidade Anual (%)</label>
-          <input type="number" class="form-control" id="taxaJuros" step="0.01" required />
+          <input type="text" class="form-control percentual" id="taxaJuros" value="8,00" inputmode="numeric" required />
+          <div class="invalid-feedback">
+            Por favor, insira uma taxa de rentabilidade anual válida.
+          </div>
         </div>
         <div class="col-md-6">
           <label for="inflacao" class="form-label">Inflação Anual Estimada (%)</label>
-          <input type="number" class="form-control" id="inflacao" step="0.01" value="4" />
+          <input type="text" class="form-control percentual" id="inflacao" value="4,00" inputmode="numeric" required />
+          <div class="invalid-feedback">
+            Por favor, insira uma inflação anual estimada válida.
+          </div>
         </div>
       </div>
       <div class="mt-4 text-center">
         <button type="submit" class="btn btn-dark">Calcular</button>
       </div>
+      <div id="errorMessage" class="alert alert-danger mt-3" style="display:none;">
+        Por favor, preencha todos os campos corretamente.
+      </div>
     </form>
 
-    <div class="mt-4 resultado text-center" id="resultado"></div>
-    <canvas id="graficoAposentadoria" height="100"></canvas>
+    <div class="mt-4 resultado text-center" id="resultado" style="display:none;"></div>
+    <div class="chart-container" style="display:none;" id="chartContainer">
+      <canvas id="graficoAposentadoria"></canvas>
+    </div>
   </div>
+
+  <footer>
+    <p>Gostou da calculadora? <a href="https://youtube.com/@macollinfelipe?si=c_oSgiIYVRYM_ldy" target="_blank">Inscreva-se no canal no YouTube</a></p>
+    <p><a href="index.html">← Ir para a Calculadora de Juros Compostos</a></p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    function parseValor(valor) {
-      return parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
+    // Função para formatar o número para o padrão brasileiro de moeda
+    function formatCurrencyInput(inputElement) {
+      let value = inputElement.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+      if (value === '') {
+        inputElement.value = '';
+        return;
+      }
+      // Adiciona a vírgula para centavos e o separador de milhar
+      value = (parseFloat(value) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      inputElement.value = value;
+    }
+
+    // Função para formatar percentuais (com vírgula e duas casas decimais)
+    function formatPercentInput(inputElement) {
+      let value = inputElement.value.replace(/[^0-9,]/g, ''); // Permite apenas números e vírgula
+      if (value === '') {
+        inputElement.value = '';
+        return;
+      }
+      const floatValue = parseFloat(value.replace(',', '.'));
+      if (!isNaN(floatValue)) {
+        inputElement.value = floatValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        inputElement.value = '';
+      }
+    }
+
+    // Aplica a formatação ao digitar para os campos de valor e percentual
+    document.querySelectorAll(".valor").forEach(input => {
+      input.addEventListener("input", (event) => formatCurrencyInput(event.target));
+    });
+    document.querySelectorAll(".percentual").forEach(input => {
+      input.addEventListener("input", (event) => formatPercentInput(event.target));
+    });
+
+    // Função para parsear a entrada de string para float (considerando padrão BR)
+    function parseNumber(id) {
+      const inputElement = document.getElementById(id);
+      const rawValue = inputElement.value.replace(/\./g, '').replace(',', '.'); // Converte para padrão americano
+      const parsedValue = parseFloat(rawValue);
+
+      if (isNaN(parsedValue)) {
+        inputElement.classList.add('is-invalid');
+        return null;
+      }
+      inputElement.classList.remove('is-invalid');
+      return parsedValue;
     }
 
     const form = document.getElementById("formAposentadoria");
     const resultadoDiv = document.getElementById("resultado");
+    const chartContainer = document.getElementById("chartContainer");
     const ctx = document.getElementById("graficoAposentadoria").getContext("2d");
     let grafico;
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
 
+      // Esconde mensagens de erro anteriores e resultados
+      document.getElementById('errorMessage').style.display = 'none';
+      resultadoDiv.style.display = 'none';
+      chartContainer.style.display = 'none';
+
+      // Remove classes de validação anteriores
+      document.querySelectorAll('.form-control').forEach(input => {
+        input.classList.remove('is-invalid');
+      });
+
       const idadeAtual = parseInt(document.getElementById("idadeAtual").value);
       const idadeAposentadoria = parseInt(document.getElementById("idadeAposentadoria").value);
-      const aporteMensal = parseValor(document.getElementById("aporteMensal").value);
-      const patrimonioAtual = parseValor(document.getElementById("patrimonioAtual").value);
-      const taxaJuros = parseFloat(document.getElementById("taxaJuros").value) / 100;
-      const inflacao = parseFloat(document.getElementById("inflacao").value) / 100;
+      const aporteMensal = parseNumber("aporteMensal");
+      const patrimonioAtual = parseNumber("patrimonioAtual");
+      const taxaJurosAnual = parseNumber("taxaJuros") / 100;
+      const inflacaoAnual = parseNumber("inflacao") / 100;
 
-      const anos = idadeAposentadoria - idadeAtual;
-      const meses = anos * 12;
-      const taxaMensal = Math.pow(1 + taxaJuros, 1 / 12) - 1;
+      // Validação de inputs
+      let hasError = false;
+      if (isNaN(idadeAtual) || idadeAtual <= 0) { document.getElementById('idadeAtual').classList.add('is-invalid'); hasError = true; }
+      if (isNaN(idadeAposentadoria) || idadeAposentadoria <= 0 || idadeAposentadoria <= idadeAtual) { document.getElementById('idadeAposentadoria').classList.add('is-invalid'); hasError = true; }
+      if (aporteMensal === null || aporteMensal < 0) { document.getElementById('aporteMensal').classList.add('is-invalid'); hasError = true; }
+      if (patrimonioAtual === null || patrimonioAtual < 0) { document.getElementById('patrimonioAtual').classList.add('is-invalid'); hasError = true; }
+      if (taxaJurosAnual === null || taxaJurosAnual < 0) { document.getElementById('taxaJuros').classList.add('is-invalid'); hasError = true; }
+      if (inflacaoAnual === null || inflacaoAnual < 0) { document.getElementById('inflacao').classList.add('is-invalid'); hasError = true; }
 
-      let saldo = patrimonioAtual;
-      let historico = [];
-
-      for (let i = 1; i <= meses; i++) {
-        saldo = saldo * (1 + taxaMensal) + aporteMensal;
-        historico.push({ mes: i, saldo });
+      if (hasError) {
+        document.getElementById('errorMessage').style.display = 'block';
+        return;
       }
 
-      const saldoFinal = saldo;
-      const saldoCorrigido = saldoFinal / Math.pow(1 + inflacao, anos);
+      const anosParaAposentadoria = idadeAposentadoria - idadeAtual;
+      const mesesParaAposentadoria = anosParaAposentadoria * 12;
+
+      // Taxa de juros mensal equivalente e taxa de inflação mensal equivalente
+      const taxaMensalReal = (1 + taxaJurosAnual) / (1 + inflacaoAnual) - 1; // Rentabilidade Real (descontada a inflação)
+      const taxaMensalNominal = Math.pow(1 + taxaJurosAnual, 1 / 12) - 1;
+      const taxaInflacaoMensal = Math.pow(1 + inflacaoAnual, 1 / 12) - 1;
+
+
+      let saldoNominal = patrimonioAtual;
+      let saldoReal = patrimonioAtual; // Saldo já corrigido pela inflação
+      let totalAportado = patrimonioAtual;
+
+      let historicoNominal = [{ ano: 0, saldo: patrimonioAtual }];
+      let historicoReal = [{ ano: 0, saldo: patrimonioAtual }];
+      let historicoAportado = [{ ano: 0, saldo: patrimonioAtual }];
+      let labelsGrafico = ['Ano 0 (Idade ' + idadeAtual + ')'];
+
+      for (let ano = 1; ano <= anosParaAposentadoria; ano++) {
+        // Acumula os aportes e juros mensalmente
+        for (let mes = 1; mes <= 12; mes++) {
+          saldoNominal = saldoNominal * (1 + taxaMensalNominal) + aporteMensal;
+          saldoReal = saldoReal * (1 + taxaMensalReal) + (aporteMensal / Math.pow(1 + taxaInflacaoMensal, mes)); // Aporte corrigido para o mês
+          // Para o total aportado, somamos o valor nominal dos aportes
+          if (mes === 1) { // Apenas para o primeiro mês do ano, já que o loop é por meses
+              // totalAportado += aporteMensal; // Isso acumularia mensalmente, mas queremos o total nominal acumulado
+          }
+        }
+        totalAportado += (aporteMensal * 12); // Soma o aporte total do ano
+
+        historicoNominal.push({ ano: ano, saldo: saldoNominal });
+        historicoReal.push({ ano: ano, saldo: saldoReal });
+        historicoAportado.push({ ano: ano, saldo: totalAportado });
+        labelsGrafico.push(`Ano ${ano} (Idade ${idadeAtual + ano})`);
+      }
+
+      const saldoFinalNominal = saldoNominal;
+      const saldoFinalReal = saldoReal; // Já está corrigido pela inflação ao final do período
 
       resultadoDiv.innerHTML = `
-        Valor projetado em ${anos} anos: <br/>
-        <span class="text-success">R$ ${saldoFinal.toFixed(2).toLocaleString("pt-BR")}</span><br/>
-        Valor corrigido pela inflação: <br/>
-        <span class="text-primary">R$ ${saldoCorrigido.toFixed(2).toLocaleString("pt-BR")}</span>
+        <p>Valor projetado (nominal) ao se aposentar: <br/><span class="text-success">R$ ${saldoFinalNominal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
+        <p>Valor projetado (poder de compra atual): <br/><span class="text-primary">R$ ${saldoFinalReal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
+        <p>Você terá ${anosParaAposentadoria} anos para acumular esse valor.</p>
       `;
-
-      const labels = historico.map((item) => `Mês ${item.mes}`);
-      const dados = historico.map((item) => item.saldo.toFixed(2));
+      resultadoDiv.style.display = 'block';
+      chartContainer.style.display = 'block';
 
       if (grafico) grafico.destroy();
       grafico = new Chart(ctx, {
         type: "line",
         data: {
-          labels: labels,
-          datasets: [{
-            label: "Evolução do Patrimônio",
-            data: dados,
-            borderColor: "green",
-            backgroundColor: "rgba(0,128,0,0.1)",
-            fill: true,
-            tension: 0.1
-          }]
+          labels: labelsGrafico,
+          datasets: [
+            {
+              label: "Patrimônio Acumulado (Nominal)",
+              data: historicoNominal.map(item => item.saldo),
+              borderColor: "#0d6efd",
+              backgroundColor: "rgba(13, 110, 253, 0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3
+            },
+            {
+              label: "Patrimônio Acumulado (Real, poder de compra atual)",
+              data: historicoReal.map(item => item.saldo),
+              borderColor: "#198754", /* Verde para real */
+              backgroundColor: "rgba(25, 135, 84, 0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3
+            },
+            {
+              label: "Total Aportado",
+              data: historicoAportado.map(item => item.saldo),
+              borderColor: "#ffc107",
+              backgroundColor: "rgba(255, 193, 7, 0.1)",
+              tension: 0.3,
+              fill: false,
+              borderDash: [5, 5],
+              pointRadius: 2
+            }
+          ]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                  }
+                  return label;
+                },
+                title: function(context) {
+                  return context.label;
+                }
+              }
+            }
+          },
           scales: {
             y: {
               beginAtZero: false,
@@ -164,18 +341,24 @@
                   return "R$ " + parseFloat(value).toLocaleString("pt-BR");
                 }
               }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Anos de Contribuição'
+                }
             }
           }
         }
       });
     });
 
-    document.querySelectorAll(".valor").forEach(input => {
-      input.addEventListener("input", (e) => {
-        let valor = e.target.value.replace(/\D/g, "");
-        valor = (parseFloat(valor) / 100).toFixed(2);
-        e.target.value = valor.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      });
+    // Inicializa a formatação dos campos ao carregar a página
+    document.addEventListener('DOMContentLoaded', () => {
+      formatCurrencyInput(document.getElementById('aporteMensal'));
+      formatCurrencyInput(document.getElementById('patrimonioAtual'));
+      formatPercentInput(document.getElementById('taxaJuros'));
+      formatPercentInput(document.getElementById('inflacao'));
     });
   </script>
 </body>
