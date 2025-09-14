@@ -20,7 +20,7 @@
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
     .field{display:flex;flex-direction:column}
     label{font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type=number],select{padding:10px 12px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
+    input[type=text],select{padding:10px 12px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
     .actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
     button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
     .mutebtn{background:transparent;border:1px solid #e6e9f2;color:var(--muted);padding:8px 12px;border-radius:10px}
@@ -51,19 +51,19 @@
       <div class="grid">
         <div class="field">
           <label for="valorInicial">Valor inicial (R$)</label>
-          <input id="valorInicial" type="number" min="0" step="0.01" value="1000">
+          <input id="valorInicial" type="text" value="1.000" oninput="formatarMoeda(this)">
         </div>
         <div class="field">
           <label for="aporte">Aporte mensal (R$)</label>
-          <input id="aporte" type="number" min="0" step="0.01" value="1000">
+          <input id="aporte" type="text" value="1.000" oninput="formatarMoeda(this)">
         </div>
         <div class="field">
           <label for="taxa">Taxa de juros</label>
-          <input id="taxa" type="number" min="0" step="0.01" value="8">
+          <input id="taxa" type="text" value="8" oninput="formatarNumero(this)">
         </div>
         <div class="field">
           <label for="periodo">Período</label>
-          <input id="periodo" type="number" min="1" step="1" value="20">
+          <input id="periodo" type="text" value="20" oninput="formatarNumero(this)">
         </div>
         <div class="field">
           <label for="unidade">Unidade da taxa</label>
@@ -124,93 +124,89 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const $ = id => document.getElementById(id)
-    const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+    const $ = id => document.getElementById(id);
+    const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+    function formatarMoeda(el){
+      let num = el.value.replace(/[\.]/g,'').replace(/,/g,'.');
+      if(isNaN(num)) num='0';
+      el.value = parseFloat(num).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+
+    function formatarNumero(el){
+      el.value = el.value.replace(/[^0-9.]/g,'');
+    }
+
+    function parseInput(el){
+      return parseFloat(el.value.replace(/[\.]/g,'').replace(/,/g,'.')) || 0;
+    }
 
     function calcular(){
-      const C = parseFloat($('valorInicial').value) || 0
-      const aporte = parseFloat($('aporte').value) || 0
-      const taxa = parseFloat($('taxa').value) || 0
-      const periodo = parseInt($('periodo').value) || 0
-      const unidade = $('unidade').value
-      const cap = $('capitalizacao').value
+      const C = parseInput($('valorInicial'));
+      const aporte = parseInput($('aporte'));
+      const taxa = parseInput($('taxa'));
+      const periodo = parseInt($('periodo').value) || 0;
+      const unidade = $('unidade').value;
+      const cap = $('capitalizacao').value;
 
-      let i_periodo
-      if(unidade === 'anual' && cap === 'mensal'){
-        i_periodo = Math.pow(1 + taxa/100, 1/12) - 1
-      } else if(unidade === 'mensal' && cap === 'anual'){
-        i_periodo = Math.pow(1 + taxa/100, 12) - 1
-      } else {
-        i_periodo = taxa/100
-      }
+      let i_periodo;
+      if(unidade === 'anual' && cap === 'mensal') i_periodo = Math.pow(1 + taxa/100, 1/12) - 1;
+      else if(unidade === 'mensal' && cap === 'anual') i_periodo = Math.pow(1 + taxa/100, 12) - 1;
+      else i_periodo = taxa/100;
 
-      let n
-      if(cap === 'mensal'){
-        n = unidade==='anual'? periodo*12 : periodo
-      } else {
-        n = unidade==='mensal'? Math.ceil(periodo/12) : periodo
-      }
+      let n = cap==='mensal' ? (unidade==='anual'? periodo*12 : periodo) : (unidade==='mensal'? Math.ceil(periodo/12) : periodo);
 
-      const timeline=[]
-      let balance = C
-      let totalAportes=0
+      const timeline=[];
+      let balance = C;
+      let totalAportes=0;
 
       if(cap==='mensal'){
         for(let m=1;m<=n;m++){
-          balance = balance * (1 + i_periodo) + aporte
-          totalAportes += aporte
-          if(m%12===0){
-            timeline.push({period:m/12, saldo:balance, aportes: C + totalAportes, juros: balance - (C + totalAportes)})
-          }
+          balance = balance*(1+i_periodo)+aporte;
+          totalAportes+=aporte;
+          if(m%12===0) timeline.push({period:m/12, saldo:balance, aportes:C+totalAportes, juros:balance-(C+totalAportes)});
         }
       } else {
         for(let y=1;y<=n;y++){
-          balance = balance*(1 + i_periodo) + aporte*12
-          totalAportes += aporte*12
-          timeline.push({period:y, saldo:balance, aportes:C + totalAportes, juros: balance - (C + totalAportes)})
+          balance = balance*(1+i_periodo)+aporte*12;
+          totalAportes+=aporte*12;
+          timeline.push({period:y, saldo:balance, aportes:C+totalAportes, juros:balance-(C+totalAportes)});
         }
       }
 
-      const montante = balance
-      const investido = C + totalAportes
+      $('valorInvestido').textContent = fmt(C + totalAportes);
+      $('montante').textContent = fmt(balance);
+      $('juros').textContent = fmt(balance - (C + totalAportes));
 
-      $('valorInvestido').textContent = fmt(investido)
-      $('montante').textContent = fmt(montante)
-      $('juros').textContent = fmt(montante - investido)
-
-      const tbody = document.querySelector('#tabela tbody')
-      tbody.innerHTML = ''
+      const tbody = document.querySelector('#tabela tbody');
+      tbody.innerHTML='';
       timeline.forEach(row=>{
-        const tr = document.createElement('tr')
-        tr.innerHTML = `<td style='text-align:left'>${row.period}</td><td>${fmt(row.saldo)}</td><td>${fmt(row.aportes)}</td><td>${fmt(row.juros)}</td>`
-        tbody.appendChild(tr)
-      })
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td style='text-align:left'>${row.period}</td><td>${fmt(row.saldo)}</td><td>${fmt(row.aportes)}</td><td>${fmt(row.juros)}</td>`;
+        tbody.appendChild(tr);
+      });
 
-      renderChart(timeline.map(r=>r.period+' anos'),timeline.map(r=>r.saldo))
+      renderChart(timeline.map(r=>r.period+' anos'), timeline.map(r=>r.saldo));
     }
 
-    let chart=null
-    function renderChart(labels, data){
-      const ctx = document.getElementById('grafico')
-      if(chart){ chart.destroy() }
-      chart = new Chart(ctx, {
-        type:'line',
-        data:{labels, datasets:[{label:'Saldo acumulado', data, fill:true, tension:0.3}]},
-        options:{responsive:true,scales:{y:{beginAtZero:true, ticks:{callback: v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}}}}
-      })
+    let chart=null;
+    function renderChart(labels,data){
+      const ctx = document.getElementById('grafico');
+      if(chart) chart.destroy();
+      chart = new Chart(ctx,{type:'line', data:{labels,datasets:[{label:'Saldo acumulado',data,fill:true,tension:0.3}]}, options:{responsive:true,scales:{y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}}}}});
     }
 
-    document.getElementById('calcular').addEventListener('click', calcular)
-    document.getElementById('limpar').addEventListener('click', ()=>{
-      document.querySelectorAll('input[type=number]').forEach(i=>i.value='');
+    document.getElementById('calcular').addEventListener('click',calcular);
+    document.getElementById('limpar').addEventListener('click',()=>{
+      document.querySelectorAll('input[type=text]').forEach(i=>i.value='');
       document.querySelector('#tabela tbody').innerHTML='';
-      if(chart){chart.destroy()}
+      if(chart) chart.destroy();
       $('valorInvestido').textContent='R$ 0,00';
       $('montante').textContent='R$ 0,00';
       $('juros').textContent='R$ 0,00';
-    })
+    });
 
-    calcular()
+    calcular();
   </script>
 </body>
 </html>
