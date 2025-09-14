@@ -21,9 +21,10 @@
     .field{display:flex;flex-direction:column}
     label{font-size:13px;color:var(--muted);margin-bottom:6px}
     input[type=number],select{padding:10px 12px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
-    .actions{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
     button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
     .mutebtn{background:transparent;border:1px solid #e6e9f2;color:var(--muted);padding:8px 12px;border-radius:10px}
+    .menu-btn{margin-left:auto;background:#14a248;}
     .results{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap}
     .result-card{flex:1;min-width:180px;background:linear-gradient(180deg,rgba(11,103,230,0.04),transparent);padding:12px;border-radius:10px}
     .result-card h3{margin:0;font-size:14px;color:var(--muted)}
@@ -83,6 +84,7 @@
       <div class="actions">
         <button id="calcular">Calcular</button>
         <button id="limpar" class="mutebtn">Limpar</button>
+        <button class="menu-btn" onclick="window.open('https://www.youtube.com/@macollinfelipe','_blank')">Canal Macollin Felipe</button>
         <div style="margin-left:auto;color:var(--muted);font-size:13px">Ex.: R$ 1.000 iniciais, R$1.000/mês, 8% a.a., 20 anos</div>
       </div>
 
@@ -122,7 +124,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    // helpers
     const $ = id => document.getElementById(id)
     const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
 
@@ -131,56 +132,40 @@
       const aporte = parseFloat($('aporte').value) || 0
       const taxa = parseFloat($('taxa').value) || 0
       const periodo = parseInt($('periodo').value) || 0
-      const unidade = $('unidade').value // mensal ou anual
-      const cap = $('capitalizacao').value // mensal ou anual
+      const unidade = $('unidade').value
+      const cap = $('capitalizacao').value
 
-      // converte taxa para taxa periódica conforme capitalização selecionada
       let i_periodo
       if(unidade === 'anual' && cap === 'mensal'){
-        // taxa informada a.a., capitalização mensal -> transforma para mensal equivalente
         i_periodo = Math.pow(1 + taxa/100, 1/12) - 1
       } else if(unidade === 'mensal' && cap === 'anual'){
-        // taxa informada a.m., capitalização anual -> converte para anual
         i_periodo = Math.pow(1 + taxa/100, 12) - 1
       } else {
         i_periodo = taxa/100
       }
 
-      // número de períodos depende da unidade de tempo do periodo (se taxa anual e cap anual, periodo em anos)
       let n
       if(cap === 'mensal'){
-        // período input assumed em anos when unidade is anual? For UX we'll treat periodo as years when unidade==anual and cap==mensal
-        // Simplicidade: assume 'periodo' always em anos se unidade=='anual', else em meses
-        if(unidade === 'anual') n = periodo * 12
-        else n = periodo
+        n = unidade==='anual'? periodo*12 : periodo
       } else {
-        // capitalizacao anual -> periodo em anos
-        if(unidade === 'mensal') n = Math.ceil(periodo/12)
-        else n = periodo
+        n = unidade==='mensal'? Math.ceil(periodo/12) : periodo
       }
 
-      // We'll compute month-by-month assuming monthly capitalization when cap==='mensal'
       const timeline=[]
       let balance = C
       let totalAportes=0
 
       if(cap==='mensal'){
         for(let m=1;m<=n;m++){
-          // aporte at start of period? We'll add aporte at end of each month (typical)
-          balance = balance * (1 + i_periodo)
-          balance += aporte
+          balance = balance * (1 + i_periodo) + aporte
           totalAportes += aporte
-          if(m%12===0){ // end of year snapshot
+          if(m%12===0){
             timeline.push({period:m/12, saldo:balance, aportes: C + totalAportes, juros: balance - (C + totalAportes)})
           }
         }
       } else {
-        // anual capitalization
         for(let y=1;y<=n;y++){
-          // apply yearly interest
-          balance = balance*(1 + i_periodo)
-          // add 12 aportes during the year -> approximate as lump sum at year end
-          balance += aporte*12
+          balance = balance*(1 + i_periodo) + aporte*12
           totalAportes += aporte*12
           timeline.push({period:y, saldo:balance, aportes:C + totalAportes, juros: balance - (C + totalAportes)})
         }
@@ -193,7 +178,6 @@
       $('montante').textContent = fmt(montante)
       $('juros').textContent = fmt(montante - investido)
 
-      // tabela
       const tbody = document.querySelector('#tabela tbody')
       tbody.innerHTML = ''
       timeline.forEach(row=>{
@@ -202,11 +186,7 @@
         tbody.appendChild(tr)
       })
 
-      // grafico
-      const labels = timeline.map(r=>r.period + (cap==='mensal'? ' anos':' anos'))
-      const dataSaldo = timeline.map(r=>r.saldo)
-
-      renderChart(labels,dataSaldo)
+      renderChart(timeline.map(r=>r.period+' anos'),timeline.map(r=>r.saldo))
     }
 
     let chart=null
@@ -221,9 +201,15 @@
     }
 
     document.getElementById('calcular').addEventListener('click', calcular)
-    document.getElementById('limpar').addEventListener('click', ()=>{document.querySelectorAll('input[type=number]').forEach(i=>i.value=''); document.querySelector('#tabela tbody').innerHTML=''; if(chart){chart.destroy()} $('valorInvestido').textContent='R$ 0,00';$('montante').textContent='R$ 0,00';$('juros').textContent='R$ 0,00'})
+    document.getElementById('limpar').addEventListener('click', ()=>{
+      document.querySelectorAll('input[type=number]').forEach(i=>i.value='');
+      document.querySelector('#tabela tbody').innerHTML='';
+      if(chart){chart.destroy()}
+      $('valorInvestido').textContent='R$ 0,00';
+      $('montante').textContent='R$ 0,00';
+      $('juros').textContent='R$ 0,00';
+    })
 
-    // calc inicial
     calcular()
   </script>
 </body>
