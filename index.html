@@ -84,6 +84,7 @@
         montante = montante * (1 + taxa) + aporte;
       }
 
+      // <- CORREÇÃO AQUI: usar template literal com crases para montar a string corretamente
       document.getElementById('resultado').innerText = `Valor final: R$ ${formatCurrencyBR(montante)}`;
     }
 
